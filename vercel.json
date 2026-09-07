@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/evaluar.js": {
+      "includeFiles": "src/reglas/**",
+      "maxDuration": 30
+    }
+  }
+}

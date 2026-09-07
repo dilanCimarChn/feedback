@@ -1,0 +1,24 @@
+{
+  "margenes": "el logo y el texto no pueden tocar los bordes, dejar zona de seguridad de 24px",
+  "colores": ["#1A2B3C", "#FFFFFF", "#E63946"],
+  "contexto": "el mensaje debe alinearse con el CTA de la campaña, tono cercano y directo, sin jerga corporativa",
+  "tipografia": "fuente principal única, tamaño mínimo legible, sin mezclar más de 2 tipografías",
+  "gramatica": "sin errores ortográficos, sin mayúsculas sostenidas salvo títulos cortos",
+  "formatos": {
+    "post": {
+      "nombre": "Post de Feed (1:1 / 4:5)",
+      "zona_seguridad": "Margen general de seguridad de 24px mínimo en todos los bordes sin elementos cortados.",
+      "requisito_copy": "Copy conciso con llamado a la acción directo y claro hacia el objetivo de la publicación."
+    },
+    "reel": {
+      "nombre": "Reel / Video Vertical (9:16)",
+      "zona_seguridad": "Zona de seguridad estricta de interfaz: dejar libres los 220px inferiores (donde la app sitúa descripción, usuario y audio) y los 120px del lateral derecho (donde se ubican los botones de like, comentario y compartir). Ningún logo, título ni texto esencial puede invadir estas áreas.",
+      "requisito_copy": "Copy dinámico y ágil diseñado para video, sin párrafos pesados que compitan con el estímulo audiovisual."
+    },
+    "carrusel": {
+      "nombre": "Carrusel Multipágina",
+      "zona_seguridad": "Lámina de portada con gancho visual claro y margen de 24px.",
+      "requisito_copy": "El copy debe incluir obligatoriamente una llamada a la acción explícita de valor que invite a deslizar o interactuar con las láminas (por ejemplo: 'Desliza para ver más', 'Guarda este post para después', 'Desliza para conocer el paso a paso')."
+    }
+  }
+}
