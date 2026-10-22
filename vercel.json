@@ -1,8 +1,7 @@
 {
   "functions": {
-    "api/evaluar.js": {
-      "includeFiles": "src/reglas/**",
-      "maxDuration": 30
+    "api/*.js": {
+      "maxDuration": 60
     }
   }
 }

@@ -1,65 +1,57 @@
 import { useState } from 'react';
+import { Icono, OpcionesTarjeta, ZonaArchivos } from './ui';
+import { comprimirImagen, esImagen } from '../lib/archivos';
+import { llamarApi } from '../lib/api';
 
-export default function FormularioPublicacion({ onEvaluacionExitosa, onEvaluacionError, cargando, setCargando }) {
+const FORMATOS = [
+  { valor: 'post', titulo: 'Post', descripcion: 'Imagen única 1:1 o 4:5', max: 1 },
+  { valor: 'carrusel', titulo: 'Carrusel', descripcion: 'Varias láminas', max: 8 },
+  { valor: 'reel', titulo: 'Reel', descripcion: 'Portada o captura 9:16', max: 1 }
+];
+
+export default function FormularioPublicacion({ configuracion, onEvaluacionExitosa, onEvaluacionError, cargando, setCargando }) {
   const [copy, setCopy] = useState('');
   const [tipo, setTipo] = useState('post');
-  const [imagenBase64, setImagenBase64] = useState('');
-  const [nombreArchivo, setNombreArchivo] = useState('');
+  const [imagenes, setImagenes] = useState([]);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const formato = FORMATOS.find(f => f.valor === tipo);
 
-    setNombreArchivo(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImagenBase64(reader.result);
-    };
-    reader.onerror = () => {
-      onEvaluacionError('No fue posible procesar el archivo seleccionado.');
-    };
-    reader.readAsDataURL(file);
+  const cambiarTipo = nuevo => {
+    setTipo(nuevo);
+    const max = FORMATOS.find(f => f.valor === nuevo).max;
+    setImagenes(prev => prev.slice(0, max));
   };
 
-  const handleEliminarImagen = () => {
-    setImagenBase64('');
-    setNombreArchivo('');
+  const agregarImagenes = async archivos => {
+    const validos = archivos.filter(esImagen).slice(0, formato.max - imagenes.length);
+    try {
+      const nuevas = await Promise.all(validos.map(a => comprimirImagen(a)));
+      setImagenes(prev => [...prev, ...nuevas].slice(0, formato.max));
+    } catch (error) {
+      onEvaluacionError(error.message);
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-
-    if (!copy.trim() && !imagenBase64) {
-      alert('Ingresa el copy o carga una pieza gráfica para iniciar la evaluación.');
+    if (!copy.trim() && !imagenes.length) {
+      onEvaluacionError('Escribe el copy o sube una imagen para iniciar la revisión.');
       return;
     }
 
     setCargando(true);
     onEvaluacionError(null);
-
     try {
-      const response = await fetch('/api/evaluar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          copy,
-          imagenBase64,
-          tipo,
-        }),
+      const data = await llamarApi('/api/evaluar', {
+        copy,
+        imagenes,
+        tipo,
+        perfil: configuracion.perfil,
+        comportamiento: configuracion.comportamiento
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Ocurrió una inconsistencia al procesar la evaluación.');
-      }
-
       onEvaluacionExitosa(data);
     } catch (error) {
-      console.error('Error al evaluar publicación:', error);
-      onEvaluacionError(error.message || 'Error de comunicación con el servicio de evaluación.');
+      onEvaluacionError(error.message);
     } finally {
       setCargando(false);
     }
@@ -70,122 +62,58 @@ export default function FormularioPublicacion({ onEvaluacionExitosa, onEvaluacio
       <div className="panel-header">
         <h2 className="panel-title">
           <span className="panel-icon-wrap">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
+            <Icono nombre="documento" />
           </span>
-          <span>Parámetros de la Publicación</span>
+          <span>Publicación a revisar</span>
         </h2>
       </div>
 
-      {/* Tipo de Contenido */}
       <div className="field-group">
-        <label htmlFor="tipo-contenido" className="field-label">
-          Formato de Publicación
-        </label>
-        <select
-          id="tipo-contenido"
-          className="input-select"
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value)}
-          disabled={cargando}
-        >
-          <option value="post">Post Individual (Feed)</option>
-          <option value="reel">Reel / Video Vertical</option>
-          <option value="carrusel">Carrusel Multipágina</option>
-        </select>
+        <label className="field-label">1. ¿Qué tipo de publicación es?</label>
+        <OpcionesTarjeta opciones={FORMATOS} valor={tipo} onChange={cambiarTipo} />
       </div>
 
-      {/* Copy */}
+      <div className="field-group">
+        <label className="field-label">
+          2. {tipo === 'carrusel' ? 'Sube las láminas en orden' : tipo === 'reel' ? 'Sube la portada o una captura' : 'Sube la imagen'}
+        </label>
+        <ZonaArchivos
+          miniaturas={imagenes}
+          onAgregar={agregarImagenes}
+          onQuitar={i => setImagenes(prev => prev.filter((_, j) => j !== i))}
+          max={formato.max}
+          multiple={formato.max > 1}
+          titulo="Selecciona o arrastra aquí tu imagen"
+          ayuda="PNG, JPG o WebP"
+          deshabilitado={cargando}
+        />
+      </div>
+
       <div className="field-group">
         <label htmlFor="copy-texto" className="field-label">
-          Texto del Copy
+          3. Texto que acompaña la publicación
         </label>
         <textarea
           id="copy-texto"
           className="input-textarea"
-          placeholder="Redacta o pega el texto que acompañará a la publicación..."
+          placeholder="Pega aquí el texto (copy) que irá en la publicación..."
           value={copy}
-          onChange={(e) => setCopy(e.target.value)}
+          onChange={e => setCopy(e.target.value)}
           disabled={cargando}
         />
-        <p className="field-hint">
-          El mensaje debe mantener un tono directo, alineado al CTA y sin jergas corporativas ni faltas ortográficas.
-        </p>
+        <p className="field-hint contador">{copy.length} caracteres</p>
       </div>
 
-      {/* Imagen */}
-      <div className="field-group">
-        <label className="field-label">Pieza Gráfica</label>
-        {!imagenBase64 ? (
-          <div className="dropzone">
-            <input
-              id="input-imagen"
-              type="file"
-              accept="image/png, image/jpeg, image/webp"
-              className="dropzone-input"
-              onChange={handleImageChange}
-              disabled={cargando}
-            />
-            <div className="dropzone-icon">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
-            </div>
-            <p className="dropzone-title">Seleccionar o soltar archivo de imagen</p>
-            <p className="field-hint">Formatos compatibles: PNG, JPG, WebP</p>
-          </div>
-        ) : (
-          <div>
-            <div className="preview-wrapper">
-              <img src={imagenBase64} alt="Previsualización de pieza gráfica" className="preview-image" />
-              {!cargando && (
-                <button
-                  type="button"
-                  className="btn-remove"
-                  onClick={handleEliminarImagen}
-                  title="Remover imagen"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                  <span>Eliminar</span>
-                </button>
-              )}
-            </div>
-            <p className="field-hint" style={{ marginTop: '0.4rem' }}>
-              Archivo adjunto: <strong>{nombreArchivo}</strong>
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Botón de Enviar */}
-      <button
-        id="btn-evaluar"
-        type="submit"
-        className="btn-primary-action"
-        disabled={cargando}
-      >
+      <button id="btn-evaluar" type="submit" className="btn-primary-action" disabled={cargando}>
         {cargando ? (
           <>
-            <span className="loader-spinner"></span>
-            <span>Auditando contenido...</span>
+            <span className="loader-spinner" />
+            <span>Revisando publicación...</span>
           </>
         ) : (
           <>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <span>Ejecutar Auditoría</span>
+            <Icono nombre="buscar" tamano={16} />
+            <span>Revisar publicación</span>
           </>
         )}
       </button>

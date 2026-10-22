@@ -1,20 +1,80 @@
+import { useState } from 'react';
+import { Icono } from './ui';
+
+const TITULOS_CATEGORIA = {
+  margenes: 'Márgenes y espacios',
+  colores: 'Colores de marca',
+  contexto: 'Mensaje y tono',
+  tipografia: 'Tipografías',
+  gramatica: 'Ortografía y redacción'
+};
+
+const SEVERIDADES = {
+  alta: { etiqueta: 'Importante', orden: 0 },
+  media: { etiqueta: 'Mejorable', orden: 1 },
+  baja: { etiqueta: 'Detalle', orden: 2 }
+};
+
+function Encabezado({ icono }) {
+  return (
+    <div className="panel-header">
+      <h2 className="panel-title">
+        <span className="panel-icon-wrap">
+          <Icono nombre={icono} />
+        </span>
+        <span>Resultado de la revisión</span>
+      </h2>
+    </div>
+  );
+}
+
+function AnilloPuntaje({ puntaje, tono }) {
+  const radio = 34;
+  const circunferencia = 2 * Math.PI * radio;
+  return (
+    <div className={`anillo anillo-${tono}`}>
+      <svg width="84" height="84" viewBox="0 0 84 84" aria-hidden="true">
+        <circle cx="42" cy="42" r={radio} className="anillo-fondo" />
+        <circle
+          cx="42"
+          cy="42"
+          r={radio}
+          className="anillo-valor"
+          strokeDasharray={circunferencia}
+          strokeDashoffset={circunferencia * (1 - puntaje / 100)}
+        />
+      </svg>
+      <span className="anillo-numero">{puntaje}</span>
+    </div>
+  );
+}
+
+function generarInforme({ aprobado, puntaje, resumen, aciertos, errores }) {
+  const lineas = [];
+  const veredicto = aprobado === null ? 'Sugerencias' : aprobado ? 'Aprobada' : 'Requiere cambios';
+  lineas.push(`Revisión de publicación: ${veredicto}${puntaje !== null ? ` (${puntaje}/100)` : ''}`);
+  if (resumen) lineas.push(resumen);
+  if (aciertos.length) {
+    lineas.push('', 'Lo que está bien:');
+    aciertos.forEach(a => lineas.push(`- ${a}`));
+  }
+  if (errores.length) {
+    lineas.push('', 'Para corregir:');
+    errores.forEach(e => {
+      lineas.push(`- [${SEVERIDADES[e.severidad].etiqueta}] ${TITULOS_CATEGORIA[e.categoria]}: ${e.descripcion}`);
+      if (e.sugerencia) lineas.push(`  Cómo resolverlo: ${e.sugerencia}`);
+    });
+  }
+  return lineas.join('\n');
+}
+
 export default function ResultadoFeedback({ resultado, error, cargando }) {
-  // Estado de error de la llamada al servidor
+  const [copiado, setCopiado] = useState(false);
+
   if (error) {
     return (
       <div className="panel-card">
-        <div className="panel-header">
-          <h2 className="panel-title">
-            <span className="panel-icon-wrap">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-            </span>
-            <span>Resultado de la Auditoría</span>
-          </h2>
-        </div>
+        <Encabezado icono="alerta" />
         <div className="server-error-box">
           <h4>No fue posible completar la revisión</h4>
           <p>{error}</p>
@@ -23,173 +83,108 @@ export default function ResultadoFeedback({ resultado, error, cargando }) {
     );
   }
 
-  // Estado previo a la evaluación
-  if (!resultado && !cargando) {
-    return (
-      <div className="panel-card">
-        <div className="panel-header">
-          <h2 className="panel-title">
-            <span className="panel-icon-wrap">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
-            </span>
-            <span>Resultado de la Auditoría</span>
-          </h2>
-        </div>
-        <div className="state-empty">
-          <div className="state-empty-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <path d="M9 15h6"></path>
-              <path d="M9 11h6"></path>
-            </svg>
-          </div>
-          <h3>Esperando publicación</h3>
-          <p>
-            Define el contenido y pulsa <strong>"Ejecutar Auditoría"</strong> para procesar la conformidad contra las normas de marca.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Estado de análisis en curso
   if (cargando) {
     return (
       <div className="panel-card">
-        <div className="panel-header">
-          <h2 className="panel-title">
-            <span className="panel-icon-wrap">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-            </span>
-            <span>Resultado de la Auditoría</span>
-          </h2>
-        </div>
+        <Encabezado icono="buscar" />
         <div className="state-empty">
-          <span className="loader-spinner" style={{ width: '28px', height: '28px', margin: '0 auto 1.25rem auto', borderColor: 'rgba(30, 58, 95, 0.2)', borderTopColor: '#1A2B3C' }}></span>
-          <h3>Analizando parámetros de marca</h3>
-          <p>Contrastando márgenes, paleta cromática, tipografía, estilo lingüístico y tono de comunicación...</p>
+          <span className="loader-spinner loader-oscuro" />
+          <h3>Revisando tu publicación</h3>
+          <p>Comparando colores, tipografías, espacios y tono con las reglas de tu marca...</p>
         </div>
       </div>
     );
   }
 
-  const { aprobado, errores = [] } = resultado;
-
-  // Estado: Publicación Aprobada
-  if (aprobado === true) {
+  if (!resultado) {
     return (
       <div className="panel-card">
-        <div className="panel-header">
-          <h2 className="panel-title">
-            <span className="panel-icon-wrap">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </span>
-            <span>Resultado de la Auditoría</span>
-          </h2>
-        </div>
-
-        <div className="panel-approved">
-          <div className="approved-badge-circle">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+        <Encabezado icono="escudo" />
+        <div className="state-empty">
+          <div className="state-empty-icon">
+            <Icono nombre="documento" tamano={40} grosor={1.5} />
           </div>
-          <h3>Publicación Conforme y Aprobada</h3>
+          <h3>Aquí verás el resultado</h3>
           <p>
-            El material evaluado cumple satisfactoriamente con la totalidad de lineamientos visuales, lingüísticos y cromáticos de la identidad de marca.
+            Sube tu publicación y pulsa <strong>"Revisar publicación"</strong>. Te diremos qué está bien y qué conviene
+            corregir.
           </p>
         </div>
       </div>
     );
   }
 
-  // Estado: Publicación Rechazada
-  const erroresPorCategoria = (errores || []).reduce((acc, err) => {
-    const cat = err.categoria?.toLowerCase() || 'general';
-    if (!acc[cat]) {
-      acc[cat] = [];
-    }
-    acc[cat].push(err);
-    return acc;
-  }, {});
+  const { aprobado, puntaje = null, resumen = '', aciertos = [], errores = [] } = resultado;
+  const tono = aprobado === null ? 'neutro' : aprobado ? 'exito' : 'error';
+  const titulo =
+    aprobado === null ? 'Sugerencias de mejora' : aprobado ? 'Lista para publicar' : 'Necesita algunos cambios';
+  const ordenados = [...errores].sort((a, b) => SEVERIDADES[a.severidad].orden - SEVERIDADES[b.severidad].orden);
 
-  const titulosCategoria = {
-    margenes: 'Márgenes y Zona de Seguridad',
-    colores: 'Paleta Cromática Oficial',
-    contexto: 'Contexto y Tono Editorial',
-    tipografia: 'Normativa Tipográfica',
-    gramatica: 'Ortografía y Estilo',
-    general: 'Observaciones Generales'
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(generarInforme({ aprobado, puntaje, resumen, aciertos, errores: ordenados }));
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // Portapapeles no disponible
+    }
   };
 
   return (
     <div className="panel-card">
-      <div className="panel-header">
-        <h2 className="panel-title">
-          <span className="panel-icon-wrap">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-          </span>
-          <span>Resultado de la Auditoría</span>
-        </h2>
-      </div>
+      <Encabezado icono={aprobado === false ? 'alerta' : 'check'} />
 
-      {/* Resumen Superior */}
-      <div className="panel-rejected-header">
-        <div className="rejected-icon-circle">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </div>
-        <div className="rejected-info">
-          <h3>Publicación Requiere Modificaciones</h3>
-          <p>
-            Se identificaron {errores.length} {errores.length === 1 ? 'inconsistencia normativa' : 'inconsistencias normativas'} que impiden su aprobación.
-          </p>
+      <div className={`veredicto veredicto-${tono}`}>
+        {puntaje !== null && <AnilloPuntaje puntaje={puntaje} tono={tono} />}
+        <div>
+          <h3>{titulo}</h3>
+          {resumen && <p>{resumen}</p>}
         </div>
       </div>
 
-      {/* Listado Agrupado por Categoría */}
-      <div>
-        {Object.entries(erroresPorCategoria).map(([catKey, lista]) => (
-          <div key={catKey} className="category-group">
-            <div className="category-group-header">
-              <span className="category-badge">
-                {titulosCategoria[catKey] || catKey.toUpperCase()}
-              </span>
-              <span className="category-counter">
-                {lista.length} {lista.length === 1 ? 'observación' : 'observaciones'}
-              </span>
-            </div>
+      {aciertos.length > 0 && (
+        <div className="bloque-resultado">
+          <h4 className="bloque-titulo">Lo que está bien</h4>
+          <ul className="lista-aciertos">
+            {aciertos.map((a, i) => (
+              <li key={i}>
+                <Icono nombre="check" tamano={15} grosor={2.5} />
+                <span>{a}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-            <div>
-              {lista.map((item, idx) => (
-                <div key={idx} className="error-row">
-                  <p className="error-message">{item.descripcion}</p>
-                  {item.sugerencia && (
-                    <div className="error-suggestion">
-                      <strong>Acción recomendada: </strong>
-                      <span>{item.sugerencia}</span>
-                    </div>
-                  )}
+      {ordenados.length > 0 && (
+        <div className="bloque-resultado">
+          <h4 className="bloque-titulo">
+            {aprobado === null ? 'Sugerencias' : 'Para corregir'} ({ordenados.length})
+          </h4>
+          {ordenados.map((item, i) => (
+            <div key={i} className={`observacion observacion-${item.severidad}`}>
+              <div className="observacion-etiquetas">
+                <span className={`etiqueta-severidad severidad-${item.severidad}`}>
+                  {SEVERIDADES[item.severidad].etiqueta}
+                </span>
+                <span className="category-badge">{TITULOS_CATEGORIA[item.categoria]}</span>
+              </div>
+              <p className="error-message">{item.descripcion}</p>
+              {item.sugerencia && (
+                <div className="error-suggestion">
+                  <strong>Cómo resolverlo: </strong>
+                  <span>{item.sugerencia}</span>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      <button type="button" className="btn-secundario btn-ancho" onClick={copiar}>
+        <Icono nombre={copiado ? 'check' : 'copiar'} tamano={16} />
+        {copiado ? 'Informe copiado' : 'Copiar informe para el diseñador'}
+      </button>
     </div>
   );
 }
