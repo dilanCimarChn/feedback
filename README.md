@@ -1,5 +1,7 @@
 # Agente de Feedback - Auditoría de Contenido con IA
 
+Incluye **Estrategia y calendario para cualquier nicho**: elige una duración de un día a un año y el agente consulta fuentes disponibles y propone redes, fechas, horarios, temas, guiones, copy, hashtags y dirección visual con Gemini. Reutiliza el perfil de marca y deja los ajustes manuales como opción. Uso, conexiones y límites en [MARKETING.md](MARKETING.md).
+
 Sistema inteligente de control de calidad y auditoría de marca para publicaciones en redes sociales (Feed, Reels y Carruseles), impulsado por **React 19 + Vite** y la API multimodal de **Google Gemini**.
 
 ---
@@ -66,3 +68,15 @@ Sistema inteligente de control de calidad y auditoría de marca para publicacion
    - `GEMINI_API_KEY`: tu clave de API de Gemini.
    - `APP_ACCESS_CODE` (opcional): código que se pedirá para usar la herramienta.
 3. Haz clic en **Deploy**.
+
+## Radar de tendencias
+
+Prioriza las seis redes **Facebook, Instagram, TikTok, X (Twitter), LinkedIn y YouTube**, con conectores de lectura oficiales configurables en el servidor. Sin credenciales se muestra `Sin configurar`; no se inventan datos. Configuración y alcance de cada conexión en [REDES_SOCIALES.md](REDES_SOCIALES.md).
+
+La pestaña **Fuentes y tendencias** consulta `/api/tendencias`, que reúne Google Trends RSS, YouTube (si tiene clave) y noticias GDELT de los últimos 7 días. Cada fuente tiene estado propio: un fallo de GDELT no impide ver las tendencias disponibles ni continuar al calendario. El tema es opcional y orienta las noticias; las búsquedas y videos son señales generales del país, no un ranking del nicho.
+
+Muestra las señales obtenidas, el momento de consulta y enlaces a las fuentes. No mide alcance, engagement ni mejores horarios de Instagram o TikTok. Las señales se pueden llevar al agente para evaluar su pertinencia y generar una campaña; no se presentan como garantía de rendimiento.
+
+La consulta es manual en esta pestaña y automática al generar un calendario. Hay caché en memoria de 15 minutos y no hay archivo persistente ni actualización con la aplicación cerrada. Este radar no incluye historial de cobertura. Si ninguna fuente responde, lo informa y permite continuar con una propuesta editorial inicial, sin inventar datos.
+
+Documentación del proveedor: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/

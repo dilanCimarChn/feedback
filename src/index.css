@@ -1454,3 +1454,101 @@ button {
   font-size: 0.85rem;
   color: #B91C1C;
 }
+
+/* Radar de tendencias */
+[hidden] { display: none !important; }
+.pestanas { display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px; padding-bottom: 12px; }
+.pestanas button, .temas-marca button { border: 1px solid var(--border-medium); background: white; border-radius: 8px; padding: 10px 16px; color: var(--text-secondary); cursor: pointer; font: inherit; }
+.pestanas button[aria-current] { background: var(--brand-navy); color: white; border-color: var(--brand-navy); }
+.tendencias { display: grid; gap: 20px; }
+.tendencias .panel-card { padding: 24px; }
+.tendencias p { color: var(--text-secondary); margin: 10px 0; }
+.tendencias-filtros { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 16px; align-items: end; margin: 24px 0 16px; }
+.tendencias-filtros label { display: grid; gap: 8px; font-size: 13px; font-weight: 600; }
+.tendencias-filtros input, .tendencias-filtros select { min-width: 0; width: 100%; padding: 12px; border: 1px solid var(--border-medium); border-radius: 8px; background: white; color: var(--text-primary); font: inherit; }
+.temas-marca { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; }
+.temas-marca button { padding: 5px 10px; font-size: 12px; }
+.tendencias-auto { display: flex; gap: 8px; align-items: center; margin-top: 18px; font-size: 13px; }
+.tendencias-nota, .tendencias small { font-size: 12px; color: var(--text-muted); }
+.tendencias-resumen { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+.tendencias-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.tendencias-grid h3 { margin: 12px 0; font-size: 18px; }
+.tendencias a { color: var(--brand-navy); text-decoration: none; }
+.tendencias a:hover { text-decoration: underline; }
+.tendencias-idea { background: var(--bg-surface-subtle); border-radius: 8px; padding: 16px; margin: 18px 0; font-size: 13px; }
+.tendencias-error { background: var(--status-error-bg); padding: 16px; border-radius: 8px; color: var(--status-error-text) !important; }
+.tendencias svg { width: 100%; margin: 20px 0 4px; }
+.tendencias details { margin-top: 18px; }
+.tendencias-tabla { max-height: 240px; overflow: auto; }
+.tendencias table { width: 100%; text-align: left; font-size: 12px; border-collapse: collapse; }
+.tendencias td, .tendencias th { padding: 8px; border-bottom: 1px solid var(--border-subtle); }
+@media (max-width: 800px) { .tendencias-filtros, .tendencias-grid { grid-template-columns: 1fr; } }
+
+/* Estrategia y calendario editorial */
+.pestanas { flex-wrap: wrap; }
+.marketing { display: grid; gap: 24px; }
+.marketing .panel-card { padding: 26px; }
+.marketing-hero { background: var(--brand-navy); color: white; padding: 32px; border-radius: 14px; display: flex; gap: 24px; align-items: center; justify-content: space-between; }
+.marketing-hero h2 { font-size: clamp(24px,3vw,34px); margin: 10px 0; letter-spacing: -1px; }
+.marketing-hero p { max-width: 650px; color: #dae4ee; }
+.marketing-etiqueta { font-size: 11px; letter-spacing: 2px; color: #a9cfdb; font-weight: 700; }
+.marketing-sello { border: 1px solid #536579; border-radius: 10px; padding: 18px; max-width: 190px; font-size: 13px; }
+.marketing-pasos { display: flex; flex-wrap: wrap; gap: 20px; color: var(--text-secondary); font-size: 13px; }
+.marketing p { margin: 12px 0; }
+.marketing h3 { margin: 6px 0 12px; font-size: 19px; }
+.marketing h4 { margin: 22px 0 8px; }
+.marketing summary { cursor: pointer; }
+.marketing-estado { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.marketing-estado span { padding: 8px 12px; border-radius: 8px; background: var(--bg-surface-subtle); font-size: 12px; color: var(--text-secondary); }
+.marketing-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.marketing-file { width: 1px; height: 1px; position: absolute; opacity: 0; }
+.marketing label:focus-within { outline: 2px solid var(--border-focus); outline-offset: 3px; }
+.marketing .marketing-nota { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+.marketing-filtros { display: flex; gap: 14px; flex-wrap: wrap; margin: 16px 0; }
+.marketing label { display: grid; gap: 7px; font-size: 13px; font-weight: 600; }
+.marketing label.btn-secundario { display: inline-flex; cursor: pointer; }
+.marketing input:not([type=checkbox]):not([type=file]), .marketing select, .marketing textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--border-medium); border-radius: 7px; background: white; font: inherit; color: var(--text-primary); }
+.marketing textarea { resize: vertical; min-height: 90px; font-weight: 400; line-height: 1.6; }
+.marketing-tabla { overflow-x: auto; }
+.marketing table { width: 100%; text-align: left; border-collapse: collapse; font-size: 13px; }
+.marketing td, .marketing th { padding: 12px; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+.marketing th { background: var(--bg-surface-subtle); }
+.marketing-vacio { padding: 20px; background: var(--bg-surface-subtle); color: var(--text-secondary); border-radius: 8px; margin: 16px 0; }
+.marketing-fuentes, .marketing-guia { margin-top: 24px; border-top: 1px solid var(--border-subtle); padding-top: 20px; }
+.marketing a { color: var(--brand-navy); }
+.marketing-guia > a { display: inline-block; font-size: 12px; margin: 0 16px 8px 0; }
+.marketing-formatos { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 12px; margin: 20px 0; }
+.marketing-formatos article { background: var(--bg-surface-subtle); border-radius: 8px; padding: 16px; font-size: 13px; }
+.marketing small { display: block; font-size: 12px; color: var(--text-muted); font-weight: 400; }
+.marketing-videos { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 12px; }
+.marketing-videos article { border: 1px solid var(--border-subtle); padding: 16px; border-radius: 8px; font-size: 13px; overflow-wrap: anywhere; }
+.marketing-videos small { margin-top: 10px; }
+.marketing-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; margin: 22px 0; }
+.marketing-ancho { grid-column: 1 / -1; }
+.marketing fieldset { border: 0; margin: 22px 0; padding: 0; }
+.marketing legend { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.marketing-checks { display: flex; flex-wrap: wrap; gap: 10px; }
+.marketing-checks label { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-medium); padding: 10px 12px; border-radius: 8px; cursor: pointer; }
+.marketing-checks label:has(:checked) { background: var(--brand-navy-soft); border-color: var(--brand-navy); }
+.marketing .marketing-checkbox { display: flex; align-items: center; gap: 10px; }
+.marketing-generar { display: flex; gap: 20px; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border-subtle); }
+.marketing-generar small { margin-top: 8px; }
+.marketing-estrategia { white-space: pre-wrap; line-height: 1.8; }
+.marketing ul { padding-left: 22px; line-height: 1.8; font-size: 14px; }
+.marketing-calendario { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 6px; margin-top: 20px; }
+.marketing-dia { min-height: 140px; padding: 8px; border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 12px; }
+.marketing-dia > span { color: var(--text-muted); }
+.marketing-dia button { display: grid; gap: 6px; width: 100%; text-align: left; border: 0; border-left: 3px solid #1d817c; border-radius: 5px; background: #edf6f5; padding: 9px; margin-top: 10px; color: var(--text-primary); cursor: pointer; font: inherit; overflow-wrap: anywhere; }
+.marketing-dia button:hover { background: #dcefeb; }
+.marketing-dia button small { font-size: 10px; }
+.marketing-editor { border: 1px solid var(--brand-navy); }
+@media (max-width: 1000px) { .marketing-calendario { grid-template-columns: repeat(4,minmax(0,1fr)); } .marketing-dia-vacio { display:none; } }
+@media (max-width: 650px) { .marketing-hero { padding: 22px; } .marketing-sello { display:none; } .marketing-form-grid { grid-template-columns: 1fr; } .marketing-calendario { grid-template-columns: repeat(2,minmax(0,1fr)); } .marketing-generar { align-items: stretch; flex-direction: column; } .marketing .panel-card { padding: 18px; } }
+
+.marketing-duracion { display:flex; flex-wrap:wrap; gap:12px; margin:22px 0; }
+.marketing-duracion button { padding:14px 20px; background:white; border:1px solid var(--border-medium); border-radius:9px; font:inherit; cursor:pointer; color:var(--text-primary); }
+.marketing-duracion button[aria-pressed=true] { background:var(--brand-navy); border-color:var(--brand-navy); color:white; }
+.marketing-preferencias { margin-top:22px; border-top:1px solid var(--border-subtle); padding-top:16px; }
+.marketing-marca { border-left:3px solid #1d817c; padding:12px 16px; background:var(--bg-surface-subtle); border-radius:5px; }
+.marketing-marca small { margin-top:8px; }
+.marketing-duracion button:disabled { opacity:.6; cursor:wait; }
