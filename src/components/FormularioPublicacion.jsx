@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icono, OpcionesTarjeta, ZonaArchivos } from './ui';
 import { comprimirImagen, esImagen } from '../lib/archivos';
 import { llamarApi } from '../lib/api';
@@ -9,10 +9,11 @@ const FORMATOS = [
   { valor: 'reel', titulo: 'Reel', descripcion: 'Portada o captura 9:16', max: 1 }
 ];
 
-export default function FormularioPublicacion({ configuracion, onEvaluacionExitosa, onEvaluacionError, cargando, setCargando }) {
+export default function FormularioPublicacion({ configuracion, borrador, onEvaluacionExitosa, onEvaluacionError, cargando, setCargando }) {
   const [copy, setCopy] = useState('');
   const [tipo, setTipo] = useState('post');
   const [imagenes, setImagenes] = useState([]);
+  useEffect(() => { if (borrador) setCopy(borrador.texto); }, [borrador]);
 
   const formato = FORMATOS.find(f => f.valor === tipo);
 
