@@ -8,7 +8,7 @@ import { pathToFileURL } from 'url';
 dotenv.config();
 
 // Funciones serverless disponibles en /api (mismo nombre que el archivo)
-const RUTAS_API = ['evaluar', 'analizar-marca'];
+const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'plan-marketing', 'plan-automatico', 'senales-sociales'];
 
 export default defineConfig({
   plugins: [
