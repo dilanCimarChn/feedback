@@ -1,3 +1,21 @@
+# Campa?as TSCP basadas en el flujo de marketing
+
+La pantalla principal propone tres meses, con estrategia TSCP seleccionada, ingl?s y Estados Unidos como mercado de referencia para tendencias. El perfil de marca se reutiliza. La duraci?n personalizada y las preferencias son opcionales. En instalaciones con preferencias guardadas se conservan los valores anteriores; seleccionar TSCP en preferencias activa este flujo.
+
+La referencia es el PDF ?Flujo de trabajo para las campa?as de marketing y IT de TSCP? aportado por el equipo. Se incorporaron sus cuatro segmentos, cinco pilares, objetivo de adquisici?n de ONGs y nueve campos de cronograma. Cadencia fija: Instagram 3, LinkedIn 2 (dentro de 2?3), Facebook 2 y TikTok 2 por semana; los per?odos parciales conservan los d?as correspondientes. Son nueve salidas semanales con reutilizaci?n de producci?n. Mes 1: Awareness; mes 2: Consideration; mes 3+: Conversion, con revisi?n de resultados antes de afirmar qu? funciona.
+
+Cada pieza incluye segmento, pilar, mensaje, prop?sito y CTA. El JSON y CSV conservan estos campos, adem?s de fecha, hora, formato, copy, guion, instrucciones visuales y UTM. Se proponen enlaces del sitio y marketplace; los enlaces de reuni?n e informaci?n quedan pendientes de confirmar. No se comprueban enlaces autom?ticamente. Los testimonios, precios, gratuidad, cifras y casos requieren validaci?n. Good360 y TechSoup son referencias del brief, no un benchmarking realizado por la aplicaci?n.
+
+Se generan cinco borradores de email por bloque en d?as relativos 0, 3, 7, 13 y 20, con condiciones de seguimiento del documento; la interfaz muestra la secuencia del primer bloque como plantilla por contacto. No hay CRM, env?os ni seguimiento de respuestas. El JSON completo contiene las secuencias. La UI recuerda confirmar responsables y mecanismo de baja.
+
+Audiencia internacional: se puede cambiar mercado de tendencias, idioma y zona IANA. Un plan usa un solo mercado de referencia y zona horaria; no mide simult?neamente todas las regiones. Para diferentes p?blicos se necesitan planes separados y adaptaci?n cultural. No se presupone que toda la audiencia est? en Bolivia ni en un estado de EE. UU.
+
+Tres meses es la recomendaci?n operativa del equipo. Se mantiene el m?ximo de un a?o por bloques mensuales, provisional y con revisi?n semanal. Las fuentes actuales no predicen tendencias futuras ni horas pico de cuentas. No se han a?adido Insights de audiencia ni actualizaci?n aut?noma con la aplicaci?n cerrada.
+
+Validaci?n: 16 pruebas automatizadas, incluyendo cadencia, embudo entre bloques, validaci?n de segmentos y CTA, UTM y secuencia de email; compilaci?n de producci?n correcta. Generaci?n TSCP comprobada con respuestas simuladas, no con una campa?a real de Gemini ni evaluaci?n visual en navegador.
+
+---
+
 # Estrategia y calendario para cualquier nicho
 
 La pantalla inicial **Estrategia y calendario** amplía el revisor de marca con planificación orgánica de campañas. **Fuentes y tendencias** permite explorar las mismas fuentes independientes antes de planificar. Un fallo de GDELT no bloquea las otras fuentes. Las señales elegidas se llevan como contexto al calendario. El encabezado corresponde a la pantalla seleccionada y la configuración de marca se solicita como paso previo solo en el revisor.
@@ -10,7 +28,7 @@ El usuario elige una duración de días, semanas, meses o un año (máximo 366 d
 
 `/api/plan-automatico` investiga automáticamente Google Trends RSS por país, YouTube si tiene clave y GDELT con un tema derivado del perfil. Las consultas públicas se hacen en paralelo, con timeout de 12 segundos para RSS/noticias y caché en memoria de 15 minutos. La IA descarta señales ajenas al nicho. Cada fuente tiene estado explícito (consultada, sin resultados, sin configurar o no disponible), instante de consulta y referencias en el calendario. Google Trends refleja búsquedas; no mide uso de redes ni demuestra eficacia de un formato. Los conteos observados no son una garantía de rendimiento.
 
-El agente propone unas tres publicaciones por semana como frecuencia inicial, decide redes, fechas y horas, y genera copy, hashtags, palabras clave, guion, CTA, distribución y dirección visual. La paleta, tipografías, tono, reglas de emojis e instrucciones de la marca se incluyen en el contexto; no se modifica la configuración guardada de marca. Si un campo de identidad falta, la propuesta debe indicarse como pendiente de validar. No se publica ni se contacta a personas automáticamente.
+El modo general propone unas tres publicaciones por semana como frecuencia inicial; TSCP usa nueve salidas por semana seg?n su brief, decide redes, fechas y horas, y genera copy, hashtags, palabras clave, guion, CTA, distribución y dirección visual. La paleta, tipografías, tono, reglas de emojis e instrucciones de la marca se incluyen en el contexto; no se modifica la configuración guardada de marca. Si un campo de identidad falta, la propuesta debe indicarse como pendiente de validar. No se publica ni se contacta a personas automáticamente.
 
 Los horarios se etiquetan en el servidor: con al menos tres registros orgánicos de esa red en el mismo día semanal y franja horaria, se informa la muestra del histórico importado. Esto no acredita una hora óptima ni causalidad. Si no, se identifica como prueba inicial. Las métricas se recuperan del histórico importado previamente en modo manual, excluyendo anuncios y publicaciones posteriores al inicio del bloque.
 

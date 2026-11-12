@@ -1,5 +1,17 @@
 # Fuentes sociales
 
+## Uso sencillo y costos
+
+No hace falta conectar las seis redes para generar una campa?a. Google Trends RSS y noticias GDELT permiten empezar sin tokens de redes sociales, sujetos a disponibilidad y condiciones del proveedor. Las conexiones de cuentas son opcionales y no aportan autom?ticamente Insights ni horas de actividad. La generaci?n de textos sigue consumiendo Gemini seg?n la cuenta configurada.
+
+X usa cr?ditos y cobro por uso: no es una dependencia necesaria para TSCP. YouTube requiere proyecto, clave y cuotas de Data API. Meta, TikTok y LinkedIn requieren permisos y productos aprobados seg?n el acceso; no se promete acceso libre a tendencias globales ni se equipara autorizaci?n con una suscripci?n de escucha social. Consultar condiciones vigentes antes de activar cada integraci?n.
+
+Referencias verificadas el 12 de noviembre de 2026: [precios de X](https://docs.x.com/x-api/getting-started/pricing), [cuotas de YouTube](https://developers.google.com/youtube/data/guides/quota_and_compliance_audits), [Display API de TikTok](https://developers.tiktok.com/docs/en/display-api-overview).
+
+Para horarios de mayor actividad reales hacen falta estad?sticas de audiencia de cada cuenta y zona; el hist?rico importado solo permite pruebas apoyadas en muestras de rendimiento. El sistema no garantiza visibilidad ni llama horas pico a horarios estimados.
+
+
+
 El radar prioriza Facebook, Instagram, TikTok, X (Twitter), LinkedIn y YouTube. Google Trends y GDELT son complementarios. Los adaptadores consultan APIs oficiales; no se hace scraping de sesiones ni se simulan resultados. Las credenciales se configuran en el servidor con las variables de `.env.example`, nunca con prefijo `VITE_`.
 
 | Red | Lectura implementada | Configuración | Alcance real |
