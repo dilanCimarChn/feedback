@@ -97,7 +97,7 @@ export function descargarArchivo(nombre, contenido, tipo = 'text/plain;charset=u
 }
 
 export function calendarioCsv(plan) {
-  const campos = ['fecha', 'hora', 'red', 'formato', 'pilar', 'titulo', 'gancho', 'guion', 'copy', 'hashtags', 'palabras_clave', 'cta', 'metrica', 'motivo', 'base_horario', 'visual', 'distribucion'];
+  const campos = ['campana', 'mensaje', 'proposito', 'publico_objetivo', 'url_cta', 'fecha', 'hora', 'red', 'formato', 'pilar', 'titulo', 'gancho', 'guion', 'copy', 'hashtags', 'palabras_clave', 'cta', 'metrica', 'motivo', 'base_horario', 'visual', 'distribucion'];
   const celda = v => {
     let s = Array.isArray(v) ? v.join(' ') : String(v ?? '');
     if (/^[\s]*[=+@-]/.test(s)) s = `'${s}`;
