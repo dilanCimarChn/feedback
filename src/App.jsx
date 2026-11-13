@@ -100,7 +100,7 @@ export default function App() {
             </span>
           </button>
         </div>
-        <h1>{pantalla === 'marketing' ? 'Planifica contenido que impulse tu marca' : pantalla === 'tendencias' ? 'Explora señales para tu próxima campaña' : 'Revisa tus publicaciones antes de publicarlas'}</h1>
+        <h1>{pantalla === 'marketing' ? 'Contenido listo para tu equipo' : pantalla === 'tendencias' ? 'Explora señales para tu próxima campaña' : 'Revisa tus publicaciones antes de publicarlas'}</h1>
         <p>{pantalla === 'marketing' ? 'Elige la duración y el agente propone tu estrategia y calendario.' : pantalla === 'tendencias' ? 'Consulta las fuentes disponibles y lleva las ideas a tu calendario.' : 'Sube tu pieza y su texto: te diremos si respeta los colores, tipografías, espacios y tono de tu marca.'}</p>
       </header>
 
