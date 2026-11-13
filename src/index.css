@@ -1542,6 +1542,11 @@ button {
 .marketing-dia button:hover { background: #dcefeb; }
 .marketing-dia button small { font-size: 10px; }
 .marketing-editor { border: 1px solid var(--brand-navy); }
+.marketing-pieza-resumen { display:grid; grid-template-columns:2fr 1fr; gap:28px; margin:20px 0; overflow-wrap:anywhere; }
+.marketing-pieza-resumen h4 { margin:0 0 10px; }
+.marketing-pieza-resumen p { margin-bottom:22px; line-height:1.7; }
+.marketing-copy { white-space:pre-wrap; background:var(--bg-surface-subtle); padding:18px; border-radius:8px; }
+@media (max-width:650px) { .marketing-pieza-resumen { grid-template-columns:1fr; gap:0; } }
 @media (max-width: 1000px) { .marketing-calendario { grid-template-columns: repeat(4,minmax(0,1fr)); } .marketing-dia-vacio { display:none; } }
 @media (max-width: 650px) { .marketing-hero { padding: 22px; } .marketing-sello { display:none; } .marketing-form-grid { grid-template-columns: 1fr; } .marketing-calendario { grid-template-columns: repeat(2,minmax(0,1fr)); } .marketing-generar { align-items: stretch; flex-direction: column; } .marketing .panel-card { padding: 18px; } }
 
