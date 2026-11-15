@@ -23,9 +23,12 @@ test('API TSCP valida agenda, segmentación, CTA y secuencia condicional de emai
     const emails=SECUENCIA_EMAIL.map(([dia,asunto])=>({dia,asunto,copy:'Conoce TSCP. Puedes solicitar la baja.',cta:'Learn more'}));
     return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({estrategia:'Adquisición de ONGs',publicaciones,emails,experimentos:[]})}]}}]})};
   };
-  const invocar=async()=>{const res={status(c){this.code=c;return this;},json(d){this.data=d;return this;}};await handler({method:'POST',headers:{},body:{inicio:'2026-11-16',fin:'2026-11-22',pais:'US',zona:'America/New_York',descripcion:TSCP.descripcion,estrategia:'tscp'}},res);return res;};
+  const invocar=async(extra={})=>{const res={status(c){this.code=c;return this;},json(d){this.data=d;return this;}};await handler({method:'POST',headers:{},body:{inicio:'2026-11-16',fin:'2026-11-22',pais:'US',zona:'America/New_York',descripcion:TSCP.descripcion,estrategia:'tscp',...extra}},res);return res;};
   try{
     const r=await invocar();assert.equal(r.code,200);assert.equal(r.data.publicaciones.length,9);assert.equal(r.data.emails.length,5);assert.match(r.data.emails[1].condicion,/clic ni respuesta/);assert.match(r.data.publicaciones[0].url_cta,/utm_source/);
+    const continuacion=await invocar({origen:'2026-11-01'});
+    assert.equal(continuacion.code,200);assert.deepEqual(continuacion.data.emails,[]);
+    assert.equal((await invocar({origen:'2026-12-01'})).code,400);
     invalido=true;assert.equal((await invocar()).code,502);
   }finally{globalThis.fetch=anterior;if(key===undefined)delete process.env.GEMINI_API_KEY;else process.env.GEMINI_API_KEY=key;if(codigo===undefined)delete process.env.APP_ACCESS_CODE;else process.env.APP_ACCESS_CODE=codigo;}
 });
