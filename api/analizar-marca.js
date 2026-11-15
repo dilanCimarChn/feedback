@@ -1,3 +1,4 @@
+import { responderErrorServicio } from './_lib/carga.js';
 import { validarSolicitud, parteArchivo, consultarGemini, texto, listaTextos } from './_lib/comun.js';
 
 const MAX_IMAGENES = 8;
@@ -93,6 +94,7 @@ export default async function handler(req, res) {
     const bruto = await consultarGemini(apiKey, parts);
     return res.status(200).json(normalizarPerfil(bruto));
   } catch (error) {
+    if (responderErrorServicio(res, error)) return;
     console.error('Error analizando marca:', error);
     return res.status(502).json({
       error: 'No fue posible analizar tu marca. Inténtalo de nuevo en unos segundos.',

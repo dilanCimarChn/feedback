@@ -1,3 +1,4 @@
+import { responderErrorServicio } from './_lib/carga.js';
 import { validarSolicitud, consultarGemini, texto, listaTextos } from './_lib/comun.js';
 import { investigarMarketing, temporadas } from './_lib/investigacion-marketing.js';
 import { REDES, validarMetricas } from '../src/lib/marketing.js';
@@ -19,6 +20,7 @@ export default async function handler(req,res) {
     metricas=b.metricas?.length ? validarMetricas(b.metricas).filter(p=>!p.pagado && p.fecha<b.inicio) : [];
     if(JSON.stringify(b).length>250000) throw new Error('Configuración demasiado grande.');
   } catch(e) {return res.status(400).json({error:e.message});}
+  try {
   const tema=listaTextos(perfil.palabras_clave,1)[0] || texto(b.descripcion || perfil.descripcion,120).split(/[.!\n]/)[0];
   const evidencia=await investigarMarketing(b.pais,tema.replace(/[^\p{L}\p{N}\s]/gu,' ').trim().slice(0,120));
   const eventos=temporadas(b.inicio,b.fin);
@@ -33,7 +35,6 @@ Prioriza temas de las fuentes que sean pertinentes al nicho; descarta deportes, 
 Usa solo eventos entregados para fechas especiales; prepara contenido previo si es pertinente. Navidad puede inspirar ideas solidarias, educativas, comerciales o de comunidad según la marca; no implica descuentos ni donaciones para todas. No inventes festividades. Hashtags y palabras clave son propuestas: no hay volumen social medido. No garantices resultados. No propongas spam, mensajes masivos, promociones en grupos sin permiso ni publicación automática. Recomienda distribución pertinente y colaboraciones autorizadas.
 Respeta colores, tipografías y tono configurados. Sugiere composición, contraste, jerarquía y variantes dentro de la paleta; si falta identidad, propón opciones marcadas por validar. El copy respeta las reglas escritas de la marca. No inventes cifras de impacto, ofertas, testimonios, enlaces, permisos o historias reales. Diferencia explícitamente evidencia real, temporada editorial e hipótesis. Si fallan las fuentes no inventes tendencias y crea propuesta inicial identificada.
 Devuelve JSON {"estrategia":"objetivo inferido, elección de redes, frecuencia, fechas y límites de datos", "experimentos":["revisión semanal concreta"],"publicaciones":[{"fecha":"AAAA-MM-DD","hora":"HH:mm","red":"","formato":"","titulo":"","gancho":"","guion":"máximo 350 caracteres","copy":"máximo 550 caracteres","hashtags":["#..."],"palabras_clave":["..."],"cta":"","metrica":"","motivo":"fuente o hipótesis y razón de fecha/hora/red","base_horario":"Prueba inicial o Histórico de cuenta (n=...) con límite de muestra","visual":"colores, tipografía y composición","distribucion":"dónde compartir sin spam"}]}. Todos los campos son obligatorios.\nDATOS:\n${JSON.stringify(contexto)}`;
-  try {
     const instrucciones=esTscp?`Para esta campaña usa el brief TSCP como referencia estratégica, en lugar de la frecuencia genérica. Genera EXACTAMENTE ${cantidad} publicaciones en el orden, fecha y red de agenda. Incluye mensaje (una frase), proposito (Awareness/Consideration/Conversion), publico_objetivo (segmento del brief o All segments), pilar y cta de los catálogos del brief. Predomina la etapa de agenda, sin excluir las demás. Mes 4+: optimización pendiente de resultados. Beneficio en primera línea, tono humano y un único CTA. Primera semana: What is TSCP, carrusel onboarding, testimonio y caso LinkedIn pendientes de datos y permisos. No inventes resultados ni gratuidad. Reutiliza piezas para reducir producción. Redacta en ${texto(b.idioma)||'English'} para audiencia internacional, sin asumir Bolivia. Explica segmentación, mensaje central con tres apoyos verificables, reutilización y KPI de tráfico, consultas, reuniones y registros. Good360 y TechSoup son referencias de benchmarking pendientes de investigar; no afirmes haberlos consultado ni haber verificado enlaces. Añade emails: cinco borradores {dia,asunto,copy,cta}, días 0,3,7,13,20 para voluntarios de otras ONGs, con opción de baja y condiciones del brief. No se envían. Brief: ${JSON.stringify(TSCP)}. Agenda: ${JSON.stringify(agenda)}.`:'';
     const bruto=await consultarGemini(key,[{text:prompt},{text:instrucciones||'Justifica las redes según la audiencia. Las publicaciones de cuentas conectadas no son tendencias globales ni demuestran mejores horarios.'}]);
     if(!texto(bruto.estrategia) || bruto.publicaciones?.length!==cantidad) throw new Error();
@@ -58,5 +59,5 @@ Devuelve JSON {"estrategia":"objetivo inferido, elección de redes, frecuencia, 
       emails=SECUENCIA_EMAIL.map(([dia,,condicion],i)=>{const e=bruto.emails[i];if(e.dia!==dia||!texto(e.asunto)||!texto(e.copy)||!TSCP.ctas.includes(e.cta))throw new Error();return {dia,condicion,asunto:texto(e.asunto),copy:texto(e.copy,3000),cta:e.cta,url_cta:enlacesTscp(e.cta,'Email','dia-'+dia)};});
     }
     return res.status(200).json({emails,flujo:esTscp?TSCP:null,inicio:b.inicio,fin:b.fin,zona:b.zona,creado:new Date().toISOString(),estrategia:texto(bruto.estrategia,5000),experimentos:listaTextos(bruto.experimentos,6),publicaciones,evidencia,eventos,provisional:true});
-  } catch {return res.status(502).json({error:'No se pudo completar este bloque del calendario. Puedes reintentar sin perder los bloques anteriores.'});}
+  } catch (error) {if (responderErrorServicio(res, error)) return; return res.status(502).json({error:'No se pudo completar este bloque del calendario. Puedes reintentar sin perder los bloques anteriores.'});}
 }

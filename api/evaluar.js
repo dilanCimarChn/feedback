@@ -1,3 +1,4 @@
+import { responderErrorServicio } from './_lib/carga.js';
 import { validarSolicitud, parteArchivo, consultarGemini, texto, listaTextos } from './_lib/comun.js';
 import { FORMATOS, CATEGORIAS } from './_lib/formatos.js';
 
@@ -194,6 +195,7 @@ export default async function handler(req, res) {
     const bruto = await consultarGemini(apiKey, parts);
     return res.status(200).json(normalizarResultado(bruto, categorias, comportamiento));
   } catch (error) {
+    if (responderErrorServicio(res, error)) return;
     console.error('Error procesando evaluación:', error);
     return res.status(502).json({
       error: 'No fue posible completar la revisión. Inténtalo de nuevo en unos segundos.',

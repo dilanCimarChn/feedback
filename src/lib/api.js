@@ -1,6 +1,7 @@
 const CLAVE_CODIGO = 'agente-feedback:codigo-acceso';
 
 let solicitarCodigo = null;
+let codigoPendiente = null;
 
 // La app registra aquí la función que muestra el modal de código de acceso
 export function registrarSolicitudCodigo(fn) {
@@ -30,8 +31,9 @@ export async function llamarApi(ruta, cuerpo, reintento = false) {
 
   let response;
   try {
-    response = await fetch(ruta, { method: 'POST', headers, body: JSON.stringify(cuerpo) });
-  } catch {
+    response = await fetch(ruta, { method: 'POST', headers, body: JSON.stringify(cuerpo), signal: AbortSignal.timeout(70000) });
+  } catch (error) {
+    if (error.name === 'TimeoutError' || error.name === 'AbortError') throw new Error('El servidor tardó demasiado. Reintenta; tu calendario guardado se conserva.');
     throw new Error('No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.');
   }
 
@@ -47,7 +49,8 @@ export async function llamarApi(ruta, cuerpo, reintento = false) {
   }
 
   if (response.status === 401 && data?.codigoRequerido && solicitarCodigo && !reintento) {
-    const nuevoCodigo = await solicitarCodigo(codigo ? 'El código ingresado no es válido.' : '');
+    if (!codigoPendiente) codigoPendiente = Promise.resolve().then(() => solicitarCodigo(codigo ? 'El código ingresado no es válido.' : '')).finally(() => { codigoPendiente = null; });
+    const nuevoCodigo = await codigoPendiente;
     if (nuevoCodigo) {
       guardarCodigo(nuevoCodigo);
       return llamarApi(ruta, cuerpo, true);
@@ -55,7 +58,14 @@ export async function llamarApi(ruta, cuerpo, reintento = false) {
   }
 
   if (!response.ok) {
-    throw new Error(data?.error || 'Ocurrió un problema al procesar la solicitud. Inténtalo de nuevo.');
+    const espera = Number(data?.reintentarEn || response.headers?.get('retry-after'));
+    const error = new Error(data?.error || 'Ocurrió un problema al procesar la solicitud. Inténtalo de nuevo.');
+    error.status = response.status;
+    if (Number.isFinite(espera) && espera > 0) {
+      error.reintentarEn = Math.ceil(espera);
+      error.message += ` Vuelve a intentar en ${error.reintentarEn} segundos.`;
+    }
+    throw error;
   }
   return data;
 }
