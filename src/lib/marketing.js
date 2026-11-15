@@ -103,5 +103,6 @@ export function calendarioCsv(plan) {
     if (/^[\s]*[=+@-]/.test(s)) s = `'${s}`;
     return `"${s.replaceAll('"', '""')}"`;
   };
-  return '\uFEFF' + ['zona_horaria,' + campos.join(','), ...plan.publicaciones.map(p => [plan.zona, ...campos.map(c => p[c])].map(celda).join(','))].join('\r\n');
+  campos.push('base_contenido', 'fuentes');
+  return '\uFEFF' + ['zona_horaria,' + campos.join(','), ...plan.publicaciones.map(p => [plan.zona, ...campos.map(c => c==='fuentes' ? p.referencias?.map(r=>r.url || `${r.fuente}: ${r.titulo}`) : p[c])].map(celda).join(','))].join('\r\n');
 }
