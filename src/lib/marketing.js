@@ -17,12 +17,14 @@ export function rangoCampana(inicio, cantidad, unidad) {
   return {inicio,fin:limite.toISOString().slice(0,10),dias};
 }
 
-export function dividirCampana(inicio,fin) {
+export function dividirCampana(inicio,fin,maxDias=31) {
+  if (!Number.isInteger(maxDias) || maxDias < 1 || maxDias > 31) throw new Error('El bloque debe tener entre 1 y 31 días.');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(inicio || '') || !/^\d{4}-\d{2}-\d{2}$/.test(fin || '') || !Number.isFinite(Date.parse(inicio)) || !Number.isFinite(Date.parse(fin)) || inicio>fin || (Date.parse(fin)-Date.parse(inicio))/86400000>365) throw new Error('Rango de campaña no válido.');
   const bloques=[]; let cursor=inicio;
   while(cursor<=fin) {
     const d=new Date(`${cursor}T00:00:00Z`), ultimo=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).toISOString().slice(0,10);
-    const hasta=ultimo<fin?ultimo:fin;
+    const limite=new Date(Date.parse(cursor)+(maxDias-1)*86400000).toISOString().slice(0,10);
+    const hasta=[ultimo,fin,limite].sort()[0];
     bloques.push({inicio:cursor,fin:hasta}); cursor=new Date(Date.parse(hasta)+86400000).toISOString().slice(0,10);
   }
   return bloques;
