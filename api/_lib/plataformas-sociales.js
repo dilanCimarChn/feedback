@@ -1,3 +1,5 @@
+import { crearCacheAsync, huella, limitarFuentes } from './carga.js';
+const cache = crearCacheAsync();
 // Lectura exclusivamente: las credenciales y las peticiones quedan en el servidor.
 const DOCUMENTACION = {
   Facebook:'https://developers.facebook.com/docs/pages-api/posts/',
@@ -14,11 +16,13 @@ function item(titulo,url,fecha,formato,metricas={}) {
   return {titulo:texto(titulo)||'Publicación sin texto',url:/^https?:\/\//.test(url||'')?url:'',fecha:fecha||null,formato,hashtags:hashtags(titulo),metricas:metrica(metricas)};
 }
 async function json(url,token,options={}) {
+  return limitarFuentes(async () => {
   const r=await fetch(url,{...options,signal:AbortSignal.timeout(12000),headers:{Authorization:`Bearer ${token}`,...options.headers}});
   if(!r.ok)throw new Error(r.status===429?'Cuota temporal agotada.':r.status===401||r.status===403?'Revisa autorización, permisos y plan de API.':`Proveedor no disponible (${r.status}).`);
   const d=await r.json();
   if(d.error&&d.error.code!=='ok')throw new Error('El proveedor rechazó la consulta. Revisa permisos o renueva el acceso.');
   return d;
+  });
 }
 const requeridas={
   Facebook:['META_GRAPH_VERSION','FACEBOOK_PAGE_ID','FACEBOOK_PAGE_ACCESS_TOKEN'],
@@ -67,7 +71,7 @@ export async function consultarPlataformas(tema) {
     const faltantes=requeridas[red].filter(k=>!process.env[k]?.trim());
     const base={fuente:red,url:DOCUMENTACION[red],alcance,items:[],consultado:new Date().toISOString()};
     if(faltantes.length)return {...base,estado:'Sin configurar',detalle:`Requiere autorización y configuración del servidor: ${faltantes.join(', ')}.`};
-    try{const items=await leer(red,tema);return {...base,items,estado:items.length?'Consultada':'Sin resultados',detalle:alcance};}
+    try{const resultado=await cache(huella([red, red==='X'?tema.toLowerCase().trim():'', ...requeridas[red].map(k=>process.env[k])]),async()=>({items:await leer(red,tema),consultado:new Date().toISOString()}));return {...base,...resultado,estado:resultado.items.length?'Consultada':'Sin resultados',detalle:alcance};}
     catch(err){return {...base,estado:'No disponible',detalle:err.message};}
   }));
 }

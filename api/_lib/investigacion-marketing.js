@@ -1,7 +1,9 @@
 import { obtenerSenales } from './senales-sociales.js';
 import { consultarPlataformas } from './plataformas-sociales.js';
+import { crearCacheAsync, huella, limitarFuentes } from './carga.js';
 
-const cache = new Map();
+const cache = crearCacheAsync({ max: 100 });
+const cacheRss = crearCacheAsync({ max: 40 });
 const limpiar = s => String(s || '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/<[^>]*>/g, '').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim().slice(0,500);
 const etiqueta = (xml, tag) => limpiar(xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`))?.[1]);
 
@@ -9,21 +11,26 @@ export function leerTendenciasRss(xml) {
   if (!/<rss[\s>]/i.test(xml)) throw new Error('Feed no válido.');
   return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,20).map(m => ({ tema: etiqueta(m[1],'title'), volumenAproximado: etiqueta(m[1],'ht:approx_traffic'), fecha: etiqueta(m[1],'pubDate'), url: etiqueta(m[1],'link') })).filter(t => t.tema);
 }
-async function descargar(url) {
+async function descargar(url, tipo = 'json') {
+  return limitarFuentes(async () => {
   const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
   if (!r.ok) throw new Error(`Proveedor no disponible (${r.status}).`);
-  return r;
+  return tipo === 'text' ? r.text() : r.json();
+  });
 }
 export async function investigarMarketing(pais, tema) {
-  const key = `${pais}:${tema}`;
-  const previo = cache.get(key);
-  if (previo && Date.now()-previo.time < 900000) return previo.data;
+  tema = String(tema || '').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 150);
+  const configuracion = Object.entries(process.env).filter(([k]) => /^(YOUTUBE_|META_|FACEBOOK_|INSTAGRAM_|TIKTOK_|X_BEARER_|LINKEDIN_)/.test(k)).sort(([a],[b]) => a.localeCompare(b));
+  return cache(`${pais}:${tema}:${huella(configuracion)}`, () => investigar(pais, tema), data => data.estados.some(s => s.estado === 'No disponible') ? 15000 : 900000);
+}
+
+async function investigar(pais, tema) {
   const rss = `https://trends.google.com/trending/rss?geo=${pais}`;
   const consulta = new URLSearchParams({query:tema,mode:'artlist',format:'json',timespan:'7d',maxrecords:'10',sort:'datedesc'});
   const tareas = await Promise.allSettled([
-    descargar(rss).then(r => r.text()).then(leerTendenciasRss),
+    cacheRss(pais, () => descargar(rss,'text').then(leerTendenciasRss)),
     obtenerSenales(pais),
-    tema.length >= 2 ? descargar(`https://api.gdeltproject.org/api/v2/doc/doc?${consulta}`).then(r => r.json()).then(d => {
+    tema.length >= 2 ? descargar(`https://api.gdeltproject.org/api/v2/doc/doc?${consulta}`).then(d => {
       if (!Array.isArray(d.articles)) throw new Error('Respuesta no válida.');
       return d.articles.filter(a => /^https?:\/\//.test(a.url)).map(a => ({titulo:a.title,url:a.url,fecha:a.seendate}));
     }) : Promise.resolve([]),
@@ -35,8 +42,6 @@ export async function investigarMarketing(pais, tema) {
   const data = {consultado:new Date().toISOString(),pais,tema,estados,tendencias:tareas[0].status === 'fulfilled' ? tareas[0].value : [], videos:tareas[1].status === 'fulfilled' ? tareas[1].value.videos : [], noticias:tareas[2].status === 'fulfilled' ? tareas[2].value : [], limites:'Google Trends mide búsquedas, YouTube muestra una selección popular y GDELT cobertura de noticias. No miden mejores horarios de Instagram ni garantizan rendimiento. No hay acceso automático a Insights de cuentas.'};
   data.plataformas=plataformas;
   data.limites='Facebook, Instagram, TikTok y LinkedIn consultan cuentas autorizadas. X busca publicaciones públicas por tema; YouTube muestra videos populares. No equivalen a un ranking global de cada red ni permiten deducir horas óptimas universales. Google Trends y GDELT son fuentes complementarias.';
-  if (cache.size >= 50) cache.delete(cache.keys().next().value);
-  cache.set(key,{time:Date.now(),data});
   return data;
 }
 

@@ -73,7 +73,7 @@ test('plan automático investiga fuentes, respeta marca y calcula base horaria s
     assert.equal(resultado.data.evidencia.tendencias[0].tema,'Educación');
     assert.equal(resultado.data.evidencia.estados.find(e=>e.fuente==='YouTube').estado,'Sin configurar');
     fallar=true;
-    const sinDatos=await invocar({...entrada,perfil:{...entrada.perfil,palabras_clave:['otra-consulta-sin-conexion']}});
+    const sinDatos=await invocar({...entrada,pais:'MX',perfil:{...entrada.perfil,palabras_clave:['otra-consulta-sin-conexion']}});
     assert.equal(sinDatos.code,200);assert.deepEqual(sinDatos.data.evidencia.tendencias,[]);
     assert.equal(sinDatos.data.evidencia.estados[0].estado,'No disponible');
     incompleto=true;

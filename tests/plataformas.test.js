@@ -32,6 +32,10 @@ test('conexiones sociales declaran accesos faltantes, normalizan datos y aíslan
     assert.ok(peticiones.every(p=>p.opciones.headers.Authorization.startsWith('Bearer ')));
     assert.ok(!JSON.stringify(datos).includes('secreto-'));
     assert.ok(peticiones.every(p=>!p.url.includes('secreto-')));
+    const antes=peticiones.length;
+    await consultarPlataformas('educación');
+    assert.equal(peticiones.length,antes,'Las cuentas ya consultadas reutilizan la cache');
+    for(const k of variables.filter(k=>k.includes('TOKEN')))process.env[k]+='-renovado';
     globalThis.fetch=async()=>({ok:false,status:403});
     const fallos=await consultarPlataformas('otra consulta');
     assert.ok(fallos.every(p=>p.estado==='No disponible'&&p.items.length===0));
