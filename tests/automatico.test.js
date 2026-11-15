@@ -48,20 +48,23 @@ test('plan automático investiga fuentes, respeta marca y calcula base horaria s
   const anterior={fetch:globalThis.fetch,key:process.env.GEMINI_API_KEY,codigo:process.env.APP_ACCESS_CODE,youtube:process.env.YOUTUBE_API_KEY};
   try{
     process.env.GEMINI_API_KEY='test';delete process.env.APP_ACCESS_CODE;delete process.env.YOUTUBE_API_KEY;
-    let contexto,fallar=false,incompleto=false;
+    let contexto,fallar=false,incompleto=false,referenciaInvalida=false;
     globalThis.fetch=async(url,opciones)=>{
       if(String(url).includes('generativelanguage.googleapis.com')){
         const prompt=JSON.parse(opciones.body).contents[0].parts[0].text;
         contexto=JSON.parse(prompt.split('DATOS:\n')[1]);
         const cantidad=Number(prompt.match(/EXACTAMENTE (\d+)/)[1]);
-        const publicaciones=Array.from({length:incompleto?cantidad-1:cantidad},(_,i)=>({fecha:new Date(Date.parse(contexto.inicio)+i*2*86400000).toISOString().slice(0,10),hora:'12:00',red:'Instagram',formato:'Carrusel',titulo:'Aprender juntos',gancho:'Una idea práctica',guion:'Tres láminas',copy:'Comparte tu experiencia.',hashtags:['#Aprendizaje'],palabras_clave:['educación'],cta:'Comenta',metrica:'Guardados',motivo:'Propuesta editorial',base_horario:'Óptimo universal inventado',visual:'Usar #112233 y sans serif',distribucion:'Perfil propio y aliados con permiso'}));
+        const publicaciones=Array.from({length:incompleto?cantidad-1:cantidad},(_,i)=>({fecha:new Date(Date.parse(contexto.inicio)+i*2*86400000).toISOString().slice(0,10),hora:'12:00',red:'Instagram',formato:'Carrusel',referencias:referenciaInvalida?['inventada']:[],titulo:'Aprender juntos',gancho:'Una idea práctica',guion:'Tres láminas',copy:'Comparte tu experiencia.',hashtags:['#Aprendizaje'],palabras_clave:['educación'],cta:'Comenta',metrica:'Guardados',motivo:'Propuesta editorial',base_horario:'Óptimo universal inventado',visual:'Usar #112233 y sans serif',distribucion:'Perfil propio y aliados con permiso'}));
         return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({estrategia:'Propuesta educativa y revisión semanal',publicaciones,experimentos:['Revisar guardados cada semana']})}]}}]})};
       }
       if(fallar)throw new Error('Sin conexión');
       if(String(url).includes('trends.google.com'))return {ok:true,text:async()=>'<rss><channel><item><title>Educación</title></item></channel></rss>'};
       return {ok:true,json:async()=>({articles:[{title:'Una noticia de educación',url:'https://example.com/educacion',seendate:'20261110T120000Z'}]})};
     };
-    const entrada={inicio:'2026-12-01',fin:'2026-12-07',pais:'BO',zona:'America/La_Paz',perfil:{descripcion:'Escuela comunitaria',palabras_clave:['educacion-test-automatico'],colores:[{hex:'#112233'}],tono:'Cercano',instrucciones:'No inventar testimonios'},metricas:['2026-11-10','2026-11-17','2026-11-24'].map(fecha=>({red:'Instagram',formato:'Carrusel',fecha,hora:'12:30',alcance:100,interacciones:10,conversiones:0}))};
+    const ultimoMartes=new Date(Math.min(Date.now(),Date.parse('2026-12-01'))-86400000);
+    while(ultimoMartes.getUTCDay()!==2)ultimoMartes.setUTCDate(ultimoMartes.getUTCDate()-1);
+    const fechasMetricas=Array.from({length:3},(_,i)=>new Date(ultimoMartes.getTime()-i*7*86400000).toISOString().slice(0,10));
+    const entrada={inicio:'2026-12-01',fin:'2026-12-07',pais:'BO',zona:'America/La_Paz',perfil:{descripcion:'Escuela comunitaria',palabras_clave:['educacion-test-automatico'],colores:[{hex:'#112233'}],tono:'Cercano',instrucciones:'No inventar testimonios'},metricas:fechasMetricas.map(fecha=>({red:'Instagram',formato:'Carrusel',fecha,hora:'12:30',alcance:100,interacciones:10,conversiones:0}))};
     assert.equal((await invocar({...entrada,fin:'2027-12-01'})).code,400);
     const resultado=await invocar(entrada);
     assert.equal(resultado.code,200);assert.equal(resultado.data.publicaciones.length,3);
@@ -72,8 +75,11 @@ test('plan automático investiga fuentes, respeta marca y calcula base horaria s
     assert.ok(!resultado.data.publicaciones[0].base_horario.includes('Óptimo universal'));
     assert.equal(resultado.data.evidencia.tendencias[0].tema,'Educación');
     assert.equal(resultado.data.evidencia.estados.find(e=>e.fuente==='YouTube').estado,'Sin configurar');
+    referenciaInvalida=true;
+    assert.equal((await invocar(entrada)).code,502);
+    referenciaInvalida=false;
     fallar=true;
-    const sinDatos=await invocar({...entrada,perfil:{...entrada.perfil,palabras_clave:['otra-consulta-sin-conexion']}});
+    const sinDatos=await invocar({...entrada,pais:'MX',perfil:{...entrada.perfil,palabras_clave:['otra-consulta-sin-conexion']}});
     assert.equal(sinDatos.code,200);assert.deepEqual(sinDatos.data.evidencia.tendencias,[]);
     assert.equal(sinDatos.data.evidencia.estados[0].estado,'No disponible');
     incompleto=true;

@@ -1,9 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import FormularioPublicacion from './components/FormularioPublicacion';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import ResultadoFeedback from './components/ResultadoFeedback';
-import ConfiguracionModal from './components/ConfiguracionModal';
 import CodigoAccesoModal from './components/CodigoAccesoModal';
-import Tendencias from './components/Tendencias';
 import Marketing from './components/MarketingAutomatico';
 import { Icono } from './components/ui';
 import {
@@ -15,9 +12,14 @@ import {
 import { registrarSolicitudCodigo } from './lib/api';
 
 const EXIGENCIA = { flexible: 'Flexible', equilibrado: 'Equilibrado', estricto: 'Estricto' };
+const FormularioPublicacion = lazy(() => import('./components/FormularioPublicacion'));
+const ConfiguracionModal = lazy(() => import('./components/ConfiguracionModal'));
+const Tendencias = lazy(() => import('./components/Tendencias'));
 
 export default function App() {
   const [pantalla, setPantalla] = useState('marketing');
+  const [visitadas,setVisitadas]=useState(['marketing']);
+  useEffect(()=>{setVisitadas(v=>v.includes(pantalla)?v:[...v,pantalla]);},[pantalla]);
   const [borrador, setBorrador] = useState(null);
   const [contextoMarketing, setContextoMarketing] = useState(null);
   const [configGuardada, setConfigGuardada] = useState(() => cargarConfiguracion());
@@ -131,11 +133,13 @@ export default function App() {
         <Marketing perfil={perfil} comportamiento={comportamiento} contexto={contextoMarketing} onUsar={texto => { setBorrador({ texto, id: Date.now() }); setPantalla('revision'); setResultado(null); setError(null); }} />
       </div>
       <div hidden={pantalla !== 'tendencias'}>
+        {visitadas.includes('tendencias')&&<Suspense fallback={<p role="status">Cargando fuentes…</p>}>
         <Tendencias perfil={perfil} onPlanificar={texto => { if (texto.trim()) setContextoMarketing({texto,id:Date.now()}); setPantalla('marketing'); }} onUsar={texto => { setBorrador({ texto, id: Date.now() }); setPantalla('revision'); setResultado(null); setError(null); }} />
+        </Suspense>}
       </div>
       <main className="main-grid" hidden={pantalla !== 'revision'}>
         <section aria-label="Publicación a revisar">
-          <FormularioPublicacion
+          {visitadas.includes('revision')&&<Suspense fallback={<p role="status">Cargando revisión…</p>}><FormularioPublicacion
             borrador={borrador}
             configuracion={configuracion}
             onEvaluacionExitosa={data => {
@@ -145,7 +149,7 @@ export default function App() {
             onEvaluacionError={handleEvaluacionError}
             cargando={cargando}
             setCargando={setCargando}
-          />
+          /></Suspense>}
         </section>
 
         <section aria-label="Resultado de la revisión">
@@ -154,6 +158,7 @@ export default function App() {
       </main>
 
       {modalAbierto && (
+        <Suspense fallback={<p role="status">Cargando configuración…</p>}>
         <ConfiguracionModal
           configuracion={configuracion}
           configurado={configurado}
@@ -161,6 +166,7 @@ export default function App() {
           onGuardar={handleGuardar}
           onRestablecer={handleRestablecer}
         />
+        </Suspense>
       )}
 
       {solicitudCodigo && (

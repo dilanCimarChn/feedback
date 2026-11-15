@@ -1,3 +1,4 @@
+import { responderErrorServicio } from './_lib/carga.js';
 import { validarSolicitud, consultarGemini, texto, listaTextos } from './_lib/comun.js';
 import { crearFechas, REDES, FORMATOS_MARKETING, validarMetricas, resumirMetricas } from '../src/lib/marketing.js';
 import { obtenerSenales } from './_lib/senales-sociales.js';
@@ -48,7 +49,7 @@ Solo las senalesPublicas, si están presentes, son observaciones externas recien
     });
     if (fechas.length >= entrada.redes.length && entrada.redes.some(r => !publicaciones.some(p => p.red === r))) throw new Error('El plan omitió una red solicitada.');
     return res.status(200).json({ mes: entrada.mes, zona: entrada.zona, creado: new Date().toISOString(), avisoSenales, fuentes: senales?.conectado ? senales : null, base: `${metricas.length ? 'Histórico importado por el usuario' : 'Sin histórico de cuenta'}. ${senales?.conectado ? 'Señales públicas de YouTube consultadas; su pertinencia depende del nicho.' : 'Sin tendencias externas en vivo.'} Propuesta editorial IA.`, estrategia: texto(bruto.estrategia, 5000), formatos: (Array.isArray(bruto.formatos) ? bruto.formatos : []).filter(f => FORMATOS_MARKETING.includes(f.formato)).slice(0,5).map(f => ({ formato:f.formato, uso:texto(f.uso), medir:texto(f.medir) })), hashtags: { propuestos: hashtags(bruto.hashtags?.propuestos), criterio: texto(bruto.hashtags?.criterio) }, experimentos: (Array.isArray(bruto.experimentos) ? bruto.experimentos : []).slice(0,6).map(e => texto(e)), publicaciones });
-  } catch { return res.status(502).json({ error: 'No se pudo generar un plan completo. Intenta de nuevo; tu calendario anterior se conserva.' }); }
+  } catch (error) { if (responderErrorServicio(res, error)) return; return res.status(502).json({ error: 'No se pudo generar un plan completo. Intenta de nuevo; tu calendario anterior se conserva.' }); }
 }
 
 function hashtags(valor) { return Array.isArray(valor) ? [...new Set(valor.filter(t => typeof t === 'string' && /^#[\p{L}\p{N}_]+$/u.test(t)))].slice(0,8) : []; }

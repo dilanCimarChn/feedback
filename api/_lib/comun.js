@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { crearLimitador, ErrorServicio, huella } from './carga.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -64,46 +65,79 @@ function extraerJson(texto) {
   return JSON.parse(limpio);
 }
 
-// Llama a Gemini probando cada modelo hasta obtener un JSON válido
+const limitarGemini = crearLimitador();
+const pausas = new Map();
+let bytesPendientes = 0;
+
+// Una cuota agotada no debe provocar una cascada de peticiones a otros modelos.
 export async function consultarGemini(apiKey, parts) {
+  const clave = huella([apiKey]);
+  const comprobarPausa = () => {
+    const restante = (pausas.get(clave) || 0) - Date.now();
+    if (restante > 0) throw new ErrorServicio('La cuota de IA está temporalmente ocupada. Intenta más tarde.', 429, Math.ceil(restante / 1000));
+    pausas.delete(clave);
+  };
+  comprobarPausa();
+  const bytes = parts.reduce((s,p)=>s+2*((p.text?.length||0)+(p.inlineData?.data?.length||0)),0);
+  if (bytesPendientes + bytes > 32 * 1024 * 1024) throw new ErrorServicio('Hay demasiados archivos en proceso. Intenta de nuevo en unos segundos.');
+  bytesPendientes += bytes;
+  try {
+    return await limitarGemini(async () => {
+      comprobarPausa();
+      return invocarGemini(apiKey, parts, clave);
+    });
+  } finally { bytesPendientes -= bytes; }
+}
+
+async function invocarGemini(apiKey, parts, clave) {
   const payload = {
     contents: [{ parts }],
     generationConfig: { responseMimeType: 'application/json' }
   };
 
-  let ultimoError = null;
-  for (const modelo of MODELOS) {
+  const cuerpo = JSON.stringify(payload);
+  const limite = Date.now() + 32000;
+  for (const modelo of [...new Set(MODELOS)]) {
+    if (Date.now() >= limite) break;
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-          body: JSON.stringify(payload)
+          body: cuerpo,
+          signal: AbortSignal.timeout(Math.min(18000, Math.max(1, limite - Date.now())))
         }
       );
 
       if (!response.ok) {
-        ultimoError = await response.text();
-        console.warn(`Modelo ${modelo} devolvió estado ${response.status}:`, ultimoError);
-        continue;
+        if (response.status === 429) {
+          const indicado = Number(response.headers?.get('retry-after'));
+          const segundos = Number.isFinite(indicado) && indicado > 0 ? Math.min(300, Math.ceil(indicado)) : 30;
+          if (pausas.size >= 100) pausas.delete(pausas.keys().next().value);
+          pausas.set(clave, Date.now() + segundos * 1000);
+          throw new ErrorServicio('La cuota de IA está temporalmente ocupada. Intenta más tarde.', 429, segundos);
+        }
+        if (response.status === 404) continue;
+        if (response.status >= 500) throw new ErrorServicio('El proveedor de IA está ocupado. Intenta de nuevo en unos segundos.', 503, 10);
+        throw new ErrorServicio('El proveedor de IA rechazó la solicitud. Revisa la configuración del servicio.', 502, 30);
       }
 
       const data = await response.json();
       const texto = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('');
       if (!texto) {
-        ultimoError = 'Respuesta vacía del modelo.';
         continue;
       }
       return extraerJson(texto);
     } catch (err) {
-      ultimoError = err.message;
-      console.warn(`Fallo al invocar ${modelo}:`, err);
+      if (err instanceof ErrorServicio) throw err;
+      if (err.name === 'TimeoutError' || err.name === 'AbortError') throw new ErrorServicio('La IA tardó demasiado. Reintenta; el calendario anterior se conserva.', 504, 5);
+      // Un JSON incompleto permite probar el siguiente modelo dentro del presupuesto.
+      if (!(err instanceof SyntaxError)) throw new ErrorServicio('No se pudo conectar con la IA. Intenta de nuevo.', 503, 5);
     }
   }
 
   const error = new Error('No se pudo obtener respuesta de los modelos de Gemini disponibles.');
-  error.detalle = ultimoError;
   throw error;
 }
 

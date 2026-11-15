@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { llamarApi } from '../lib/api';
 import { rangoCampana, dividirCampana, DIAS, descargarArchivo, calendarioCsv } from '../lib/marketing';
-import Marketing from './Marketing';
+import { useGuardadoDiferido } from '../lib/useGuardadoDiferido';
+const Marketing = lazy(() => import('./Marketing'));
 import { TSCP } from '../lib/tscp';
 
 const CLAVE='agente-feedback:automatico:v1';
@@ -21,22 +22,24 @@ export default function MarketingAutomatico({perfil,comportamiento,contexto,onUs
   const [seleccion,setSeleccion]=useState(null);
   const [red,setRed]=useState('');
   const [editando,setEditando]=useState(false);
+  const [manualVisitado,setManualVisitado]=useState(false);
   const detener=useRef(false);
   const ocupado=useRef(false);
   useEffect(()=>{if(contexto?.texto&&!ocupado.current)setForm(f=>({...f,descripcion:contexto.texto}));},[contexto]);
-  useEffect(()=>{try{localStorage.setItem(CLAVE,JSON.stringify({form,plan}));setAviso('');}catch{setAviso('No se pudo guardar en este navegador. Exporta para conservar el calendario.');}},[form,plan]);
+  const paraGuardar=useMemo(()=>({form,plan}),[form,plan]);
+  useGuardadoDiferido(CLAVE,paraGuardar,setAviso);
   useEffect(()=>()=>{detener.current=true;},[]);
   const cambiar=(k,v)=>setForm(f=>({...f,[k]:v}));
   let rango=null;
   try{rango=rangoCampana(form.inicio,Number(form.cantidad),form.unidad);}catch{/* Mostrar error al enviar. */}
   const perfilTexto={nombre:perfil.nombre,descripcion:perfil.descripcion,publico:perfil.publico,tono:perfil.tono,emojis:perfil.emojis,colores:perfil.colores,tipografias:perfil.tipografias,estilo_visual:perfil.estilo_visual,palabras_clave:perfil.palabras_clave,palabras_prohibidas:perfil.palabras_prohibidas,hashtags:perfil.hashtags,instrucciones:comportamiento?.instrucciones};
-  const firma=JSON.stringify([form,perfilTexto]);
+  const firma=JSON.stringify([2,form,perfilTexto]);
   const generar=async(reanudar=false)=>{
     if(ocupado.current)return;
     setError('');
     if(!rango)return setError('Elige una fecha y duración entre un día y un año.');
     if(form.estrategia!=='tscp'&&!(form.descripcion||perfil.descripcion)?.trim())return setError('Cuéntanos qué hace tu marca en una frase.');
-    const periodos=dividirCampana(rango.inicio,rango.fin);
+    const periodos=dividirCampana(rango.inicio,rango.fin,7);
     let siguiente=reanudar&&plan?.firma===firma?plan:{inicio:rango.inicio,fin:rango.fin,zona:form.zona,firma,bloques:[],totalBloques:periodos.length,publicaciones:[]};
     ocupado.current=true;setCargando(true);detener.current=false;
     let metricas=[];
@@ -53,9 +56,18 @@ export default function MarketingAutomatico({perfil,comportamiento,contexto,onUs
     }catch(e){setError(e.message);}
     finally{setCargando(false);ocupado.current=false;setProgreso(detener.current?'Generación detenida. Los bloques terminados se conservaron.':'');}
   };
-  const meses=plan?dividirCampana(plan.inicio,plan.fin).map(b=>b.inicio.slice(0,7)):[];
+  const meses=useMemo(()=>plan?[...new Set(dividirCampana(plan.inicio,plan.fin).map(b=>b.inicio.slice(0,7)))]:[],[plan?.inicio,plan?.fin]);
   const publicaciones=plan?.publicaciones||[];
-  const visibles=publicaciones.map((p,i)=>({...p,indice:i})).filter(p=>p.fecha.startsWith(mes)&&(!red||p.red===red));
+  const porFecha=useMemo(()=>{
+    const dias=new Map();
+    publicaciones.forEach((p,indice)=>{
+      if(!p.fecha.startsWith(mes)&&mes)return;
+      if(red&&p.red!==red)return;
+      if(!dias.has(p.fecha))dias.set(p.fecha,[]);
+      dias.get(p.fecha).push({...p,indice});
+    });
+    return dias;
+  },[publicaciones,mes,red]);
   const bloqueVisible=plan?.bloques.find(b=>b.inicio.startsWith(mes))||plan?.bloques[0];
   const mesActivo=mes||meses[0];
   const dias=mesActivo?Array.from({length:new Date(Number(mesActivo.slice(0,4)),Number(mesActivo.slice(5)),0).getDate()},(_,i)=>`${mesActivo}-${String(i+1).padStart(2,'0')}`).filter(d=>d>=plan.inicio&&d<=plan.fin):[];
@@ -78,21 +90,22 @@ export default function MarketingAutomatico({perfil,comportamiento,contexto,onUs
     {(error||aviso)&&<p className="tendencias-error" role="alert">{error||aviso}</p>}<p role="status" aria-live="polite">{progreso}</p>
     {plan&&<>
       <div className="panel-card"><div className="marketing-acciones"><h3>Tu calendario · {publicaciones.length} publicaciones</h3><button type="button" className="btn-secundario" onClick={()=>descargarArchivo(`calendario-${plan.inicio}.csv`,calendarioCsv(plan),'text/csv;charset=utf-8')}>Exportar a Excel (CSV)</button><button type="button" className="btn-secundario" onClick={()=>descargarArchivo(`plan-${plan.inicio}.json`,JSON.stringify(plan,null,2),'application/json')}>Descargar plan completo</button></div><p className="marketing-nota">{plan.inicio} → {plan.fin} · {plan.zona} · {plan.bloques.length}/{plan.totalBloques} bloques completados · Propuesta pendiente de aprobación, sin publicación automática.</p><div className="marketing-filtros"><label>Mes<select value={mesActivo} onChange={e=>{setMes(e.target.value);setSeleccion(null);}}>{meses.map(m=><option key={m}>{m}</option>)}</select></label><label>Red<select value={red} onChange={e=>setRed(e.target.value)}><option value="">Todas</option>{[...new Set(publicaciones.map(p=>p.red))].map(r=><option key={r}>{r}</option>)}</select></label></div>
-        <div className="marketing-calendario">{dias.map(d=><div className="marketing-dia" key={d}><span>{DIAS[new Date(`${d}T12:00:00Z`).getUTCDay()]} {Number(d.slice(-2))}</span>{visibles.filter(p=>p.fecha===d).map(p=><button type="button" key={p.indice} onClick={()=>{setSeleccion(p.indice);setEditando(false);}}><small>{p.hora} · {p.red}</small><strong>{p.formato}</strong><span>{p.titulo}</span></button>)}</div>)}</div>
+        <div className="marketing-calendario">{dias.map(d=><div className="marketing-dia" key={d}><span>{DIAS[new Date(`${d}T12:00:00Z`).getUTCDay()]} {Number(d.slice(-2))}</span>{(porFecha.get(d)||[]).map(p=><button type="button" key={p.indice} onClick={()=>{setSeleccion(p.indice);setEditando(false);}}><small>{p.hora} · {p.red}</small><strong>{p.formato}</strong><span>{p.titulo}</span></button>)}</div>)}</div>
         {!bloqueVisible?.inicio.startsWith(mesActivo)&&<p>Este mes aún no se generó. Continúa los bloques pendientes.</p>}
       </div>
       {pieza&&<div className="panel-card marketing-editor">
         <div className="marketing-acciones"><h3>{pieza.titulo}</h3><button type="button" className="btn-texto" onClick={()=>{setSeleccion(null);setEditando(false);}}>Cerrar</button></div>
         <p className="marketing-nota">{pieza.fecha} · {pieza.hora} · {pieza.red} · {pieza.formato}</p>
+        {pieza.base_contenido&&<p className="marketing-nota">{pieza.base_contenido}</p>}
         <div className="marketing-pieza-resumen"><div><h4>Qué producir</h4><p>{pieza.guion}</p><h4>Texto propuesto</h4><p className="marketing-copy">{pieza.copy}</p><p>{pieza.hashtags.join(' ')}</p><p><strong>{pieza.cta}</strong></p>{pieza.url_cta&&<p className="marketing-nota">Enlace CTA: {pieza.url_cta}</p>}</div><div><h4>Idea visual</h4><p>{pieza.visual}</p><h4>Dónde compartir</h4><p>{pieza.distribucion}</p></div></div>
         <div className="marketing-acciones"><button type="button" className="btn-guardar" onClick={()=>onUsar([pieza.copy,pieza.hashtags.join(' '),pieza.cta].join('\n\n'))}>Revisar con mi marca</button><button type="button" className="btn-secundario" aria-expanded={editando} onClick={()=>setEditando(v=>!v)}>{editando?'Terminar edición':'Editar contenido'}</button></div>
         {editando&&<div className="marketing-form-grid">{[['guion','Qué producir'],['copy','Texto'],['cta','Llamada a la acción'],['visual','Idea visual'],['distribucion','Dónde compartir']].map(([c,t])=><label key={c}>{t}<textarea disabled={cargando} value={pieza[c]} onChange={e=>editar(c,e.target.value)} /></label>)}<label>Hashtags<textarea disabled={cargando} value={pieza.hashtags.join(' ')} onChange={e=>editar('hashtags',e.target.value.split(/\s+/).filter(Boolean))} /></label></div>}
-        <details className="marketing-preferencias"><summary>Por qué esta publicación y qué medir</summary><p>{pieza.motivo}</p><p>{pieza.metrica}</p><p className="marketing-nota">{pieza.base_horario}</p>{pieza.campana&&<p>{pieza.campana} · {pieza.proposito} · {pieza.publico_objetivo}<br />{pieza.pilar} · {pieza.mensaje}</p>}<p>Palabras clave: {pieza.palabras_clave.join(', ')}</p></details>
+        <details className="marketing-preferencias"><summary>Por qué esta publicación y qué medir</summary><p>{pieza.motivo}</p><p>{pieza.metrica}</p><p className="marketing-nota">{pieza.base_horario}</p>{pieza.referencias?.map(r=><p key={r.id}>{r.url?<a href={r.url} target="_blank" rel="noopener noreferrer">{r.titulo}</a>:r.titulo}<small>{r.fuente} · {r.tipo}</small></p>)}{pieza.campana&&<p>{pieza.campana} · {pieza.proposito} · {pieza.publico_objetivo}<br />{pieza.pilar} · {pieza.mensaje}</p>}<p>Palabras clave: {pieza.palabras_clave.join(', ')}</p></details>
       </div>}
       {plan.bloques[0]?.emails?.length>0&&<details className="panel-card"><summary>Emails de apoyo · 5 borradores en 20 días por contacto</summary><p>Para voluntarios que presentan TSCP a sus organizaciones. Confirmar lista autorizada, responsable y mecanismo de baja antes de enviar. El ciclo termina al responder o convertirse; no hay envío automático.</p>{plan.bloques[0].emails.map(e=><article key={e.dia}><h4>Día {e.dia} · {e.asunto}</h4><p>{e.condicion}</p><p style={{whiteSpace:'pre-wrap'}}>{e.copy}</p><p>{e.cta} · {e.url_cta}</p></article>)}</details>}
       {bloqueVisible?.flujo&&<details className="panel-card"><summary>Entrega al equipo y validaciones pendientes</summary><p>{bloqueVisible.flujo.pendiente}</p><p>Confirmar mercados y zonas de audiencia, enlaces de CTA, responsables y capacidad de producción. Revisar resultados semanalmente; adaptar temas y horarios cada mes. Medir clics UTM, consultas, reuniones y registros. Los enlaces propuestos no han sido comprobados automáticamente.</p></details>}
       {bloqueVisible&&<details className="panel-card"><summary><strong>Estrategia y fuentes consultadas</strong></summary><p className="marketing-estrategia">{bloqueVisible.estrategia}</p><ul>{bloqueVisible.experimentos.map((t,i)=><li key={i}>{t}</li>)}</ul><h4>Fuentes consultadas</h4><p className="marketing-nota">{bloqueVisible.evidencia.consultado} · {bloqueVisible.evidencia.limites}</p>{bloqueVisible.evidencia.estados.map(s=><p key={s.fuente}><a href={s.url} target="_blank" rel="noopener noreferrer">{s.fuente}</a> · {s.estado}<small>{s.detalle}</small></p>)}<details><summary>Ver señales y referencias reales</summary>{bloqueVisible.evidencia.tendencias.map((t,i)=><p key={i}>{t.tema} · Búsquedas aproximadas: {t.volumenAproximado||'No indicado'} · {t.fecha}</p>)}{bloqueVisible.evidencia.noticias.map(n=><p key={n.url}><a href={n.url} target="_blank" rel="noopener noreferrer">{n.titulo}</a></p>)}{bloqueVisible.evidencia.videos.map(v=><p key={v.url}><a href={v.url} target="_blank" rel="noopener noreferrer">{v.titulo}</a> · {v.vistas||'Sin dato'} vistas acumuladas</p>)}</details><h4>Oportunidades de temporada · no son tendencias medidas</h4>{bloqueVisible.eventos.map(e=><p key={e.fecha+e.nombre}>{e.fecha} · {e.nombre}<small>{e.tipo} {e.url&&<a href={e.url} target="_blank" rel="noopener noreferrer">Fuente</a>}</small></p>)}</details>}
     </>}
-    <details className="panel-card"><summary>Ajustes manuales e importar estadísticas (opcional)</summary><p className="marketing-nota">Si prefieres controlar cada día y horario o importar tu histórico, utiliza el modo manual. Las estadísticas importadas se usan automáticamente la próxima vez que generes un calendario.</p><Marketing perfil={perfil} onUsar={onUsar} /></details>
+    <details className="panel-card" onToggle={e=>{if(e.currentTarget.open)setManualVisitado(true);}}><summary>Ajustes manuales e importar estadísticas (opcional)</summary><p className="marketing-nota">Si prefieres controlar cada día y horario o importar tu histórico, utiliza el modo manual. Las estadísticas importadas se usan automáticamente la próxima vez que generes un calendario.</p>{manualVisitado&&<Suspense fallback={<p>Cargando ajustes...</p>}><Marketing perfil={perfil} onUsar={onUsar} /></Suspense>}</details>
   </section>;
 }
