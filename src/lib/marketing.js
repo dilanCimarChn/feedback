@@ -1,4 +1,4 @@
-export const REDES = ['Instagram', 'Facebook', 'TikTok', 'X', 'LinkedIn', 'YouTube'];
+export const REDES = ['Facebook', 'Instagram', 'TikTok', 'X', 'LinkedIn', 'YouTube'];
 export const FORMATOS_MARKETING = ['Reel', 'Clip', 'Carrusel', 'Imagen', 'Historia', 'Texto'];
 export const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -105,6 +105,13 @@ export function calendarioCsv(plan) {
     if (/^[\s]*[=+@-]/.test(s)) s = `'${s}`;
     return `"${s.replaceAll('"', '""')}"`;
   };
-  campos.push('base_contenido', 'fuentes');
-  return '\uFEFF' + ['zona_horaria,' + campos.join(','), ...plan.publicaciones.map(p => [plan.zona, ...campos.map(c => c==='fuentes' ? p.referencias?.map(r=>r.url || `${r.fuente}: ${r.titulo}`) : p[c])].map(celda).join(','))].join('\r\n');
+  campos.push('herramienta', 'enlace_herramienta', 'uso_herramienta', 'criterio_hashtags', 'base_contenido', 'fuentes');
+  const valor = (p, campo) => {
+    if (campo === 'fuentes') return p.referencias?.map(r => r.url || `${r.fuente}: ${r.titulo}`);
+    if (campo === 'herramienta') return p.herramienta?.nombre;
+    if (campo === 'enlace_herramienta') return p.herramienta?.url;
+    if (campo === 'uso_herramienta') return p.herramienta?.uso;
+    return p[campo];
+  };
+  return '\uFEFF' + ['zona_horaria,' + campos.join(','), ...plan.publicaciones.map(p => [plan.zona, ...campos.map(c => valor(p, c))].map(celda).join(','))].join('\r\n');
 }

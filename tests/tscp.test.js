@@ -18,7 +18,8 @@ test('API TSCP valida agenda, segmentación, CTA y secuencia condicional de emai
   let invalido=false;
   globalThis.fetch=async(url,opts)=>{
     if(!String(url).includes('generativelanguage'))throw new Error('Sin fuentes');
-    const agenda=agendaTscp('2026-11-16','2026-11-22');
+    const contexto=JSON.parse(JSON.parse(opts.body).contents[0].parts[0].text.split('DATOS:\n')[1]);
+    const agenda=contexto.agenda;
     const publicaciones=agenda.map(p=>({...p,hora:'12:00',formato:p.red==='TikTok'?'Clip':'Imagen',publico_objetivo:TSCP.segmentos[0],pilar:TSCP.pilares[0],cta:invalido?'Inventado':'Learn more',mensaje:'Conectar recursos con necesidades',...Object.fromEntries(['titulo','gancho','guion','copy','metrica','motivo','base_horario','visual','distribucion'].map(k=>[k,'Propuesta pendiente de validar'])),hashtags:[],palabras_clave:[]}));
     const emails=SECUENCIA_EMAIL.map(([dia,asunto])=>({dia,asunto,copy:'Conoce TSCP. Puedes solicitar la baja.',cta:'Learn more'}));
     return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({estrategia:'Adquisición de ONGs',publicaciones,emails,experimentos:[]})}]}}]})};
@@ -28,6 +29,8 @@ test('API TSCP valida agenda, segmentación, CTA y secuencia condicional de emai
     const r=await invocar();assert.equal(r.code,200);assert.equal(r.data.publicaciones.length,9);assert.equal(r.data.emails.length,5);assert.match(r.data.emails[1].condicion,/clic ni respuesta/);assert.match(r.data.publicaciones[0].url_cta,/utm_source/);
     const continuacion=await invocar({origen:'2026-11-01'});
     assert.equal(continuacion.code,200);assert.deepEqual(continuacion.data.emails,[]);
+    const soloEmails=await invocar({inicio:'2026-11-22',fin:'2026-11-22'});
+    assert.equal(soloEmails.code,200);assert.deepEqual(soloEmails.data.publicaciones,[]);assert.equal(soloEmails.data.emails.length,5);
     assert.equal((await invocar({origen:'2026-12-01'})).code,400);
     invalido=true;assert.equal((await invocar()).code,502);
   }finally{globalThis.fetch=anterior;if(key===undefined)delete process.env.GEMINI_API_KEY;else process.env.GEMINI_API_KEY=key;if(codigo===undefined)delete process.env.APP_ACCESS_CODE;else process.env.APP_ACCESS_CODE=codigo;}
