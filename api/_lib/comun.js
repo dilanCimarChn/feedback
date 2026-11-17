@@ -70,7 +70,7 @@ const pausas = new Map();
 let bytesPendientes = 0;
 
 // Una cuota agotada no debe provocar una cascada de peticiones a otros modelos.
-export async function consultarGemini(apiKey, parts) {
+export async function consultarGemini(apiKey, parts, { tiempoRespuestaMs = 18000 } = {}) {
   const clave = huella([apiKey]);
   const comprobarPausa = () => {
     const restante = (pausas.get(clave) || 0) - Date.now();
@@ -84,12 +84,12 @@ export async function consultarGemini(apiKey, parts) {
   try {
     return await limitarGemini(async () => {
       comprobarPausa();
-      return invocarGemini(apiKey, parts, clave);
+      return invocarGemini(apiKey, parts, clave, Math.max(1, Math.min(32000, Number(tiempoRespuestaMs) || 18000)));
     });
   } finally { bytesPendientes -= bytes; }
 }
 
-async function invocarGemini(apiKey, parts, clave) {
+async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs) {
   const payload = {
     contents: [{ parts }],
     generationConfig: { responseMimeType: 'application/json' }
@@ -106,7 +106,7 @@ async function invocarGemini(apiKey, parts, clave) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
           body: cuerpo,
-          signal: AbortSignal.timeout(Math.min(18000, Math.max(1, limite - Date.now())))
+          signal: AbortSignal.timeout(Math.min(tiempoRespuestaMs, Math.max(1, limite - Date.now())))
         }
       );
 
