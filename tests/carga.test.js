@@ -121,6 +121,21 @@ test('Gemini no reintenta rechazos permanentes ni timeouts como si fueran modelo
   } finally { globalThis.fetch=original; }
 });
 
+test('los calendarios pueden ampliar la espera sin superar el presupuesto total de IA', async () => {
+  const originalFetch=globalThis.fetch, originalTimeout=AbortSignal.timeout;
+  const limites=[];
+  try {
+    AbortSignal.timeout=ms=>{limites.push(ms);return originalTimeout(ms);};
+    globalThis.fetch=async()=>({ok:true,json:async()=>({candidates:[{content:{parts:[{text:'{}'}]}}]})});
+    await consultarGemini('espera-calendario',[{text:'Calendario'}]);
+    await consultarGemini('espera-calendario',[{text:'Calendario'}],{tiempoRespuestaMs:32000});
+    await consultarGemini('espera-calendario',[{text:'Calendario'}],{tiempoRespuestaMs:90000});
+    assert.equal(limites[0],18000);
+    assert.ok(limites[1]>18000 && limites[1]<=32000);
+    assert.ok(limites[2]>18000 && limites[2]<=32000);
+  } finally {globalThis.fetch=originalFetch;AbortSignal.timeout=originalTimeout;}
+});
+
 test('los archivos excesivos se rechazan antes de llamar a Gemini y no retienen capacidad', async () => {
   const original=globalThis.fetch;
   let llamadas=0;

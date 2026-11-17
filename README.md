@@ -71,6 +71,8 @@ Sistema inteligente de control de calidad y auditoría de marca para publicacion
 
 ## Radar de tendencias
 
+Para obtener y configurar los accesos oficiales, consultar [CONFIGURAR_REDES.md](CONFIGURAR_REDES.md). Incluye portales de registro, variables del servidor, costos, comprobación de conexiones y pendientes para continuar en otra sesión.
+
 Prioriza las seis redes **Facebook, Instagram, TikTok, X (Twitter), LinkedIn y YouTube**, con conectores de lectura oficiales configurables en el servidor. Sin credenciales se muestra `Sin configurar`; no se inventan datos. Configuración y alcance de cada conexión en [REDES_SOCIALES.md](REDES_SOCIALES.md).
 
 La pestaña **Fuentes y tendencias** consulta `/api/tendencias`, que reúne Google Trends RSS, YouTube (si tiene clave) y noticias GDELT de los últimos 7 días. Cada fuente tiene estado propio: un fallo de GDELT no impide ver las tendencias disponibles ni continuar al calendario. El tema es opcional y orienta las noticias; las búsquedas y videos son señales generales del país, no un ranking del nicho.

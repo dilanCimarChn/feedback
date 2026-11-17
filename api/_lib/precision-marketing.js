@@ -20,10 +20,10 @@ export function catalogarFuentes(evidencia) {
     if (!titulo || catalogo.length >= 60) return;
     catalogo.push({ id: `F${catalogo.length + 1}`, fuente, titulo: String(titulo).slice(0, 300), url: /^https?:\/\//.test(url || '') ? url : '', fecha: fecha || null, tipo, observaciones });
   };
-  evidencia.noticias?.slice(0, 10).forEach(n => agregar('GDELT', n.titulo, n.url, n.fecha, 'Noticia'));
-  evidencia.tendencias?.slice(0, 15).forEach(t => agregar('Google Trends', t.tema, t.url, t.fecha, 'Búsqueda general', { volumenBusquedaAproximado: t.volumenAproximado || null }));
-  evidencia.videos?.slice(0, 10).forEach(v => agregar('YouTube', v.titulo, v.url, v.publicado, 'Video popular', { vistasAcumuladas: v.vistas ?? null }));
-  evidencia.plataformas?.forEach(p => p.items.slice(0, 5).forEach(i => agregar(p.fuente, i.titulo, i.url, i.fecha, p.fuente === 'X' ? 'Publicación pública' : 'Cuenta autorizada', { formato: i.formato, metricas: i.metricas })));
+  evidencia.noticias?.slice(0, 10).forEach(n => agregar('GDELT', n.titulo, n.url, n.fecha, 'Noticia', { alcanceGeografico: evidencia.alcanceGeografico?.noticias, consulta: evidencia.alcanceGeografico?.consultaNoticias }));
+  evidencia.tendencias?.filter(t => t.pertinente !== false).slice(0, 15).forEach(t => agregar('Google Trends', t.tema, t.url, t.fecha, 'Búsqueda general', { volumenBusquedaAproximado: t.volumenAproximado || null, pais: evidencia.pais, pertinencia: 'Coincidencia de términos; validar contexto.' }));
+  evidencia.videos?.filter(v => v.pertinente !== false).slice(0, 10).forEach(v => agregar('YouTube', v.titulo, v.url, v.publicado, 'Video popular', { vistasAcumuladas: v.vistas ?? null, hashtagsObservados: v.hashtags || [], pais: evidencia.pais }));
+  evidencia.plataformas?.forEach(p => p.items.filter(i=>i.pertinente !== false).slice(0, 5).forEach(i => agregar(p.fuente, i.titulo, i.url, i.fecha, p.fuente === 'X' ? 'Publicación pública' : 'Cuenta autorizada', { formato: i.formato, metricas: i.metricas, hashtagsObservados: i.hashtags || [], alcance: p.alcance, consultado: p.consultado || evidencia.consultado })));
   return catalogo;
 }
 

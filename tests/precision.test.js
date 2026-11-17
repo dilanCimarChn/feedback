@@ -39,7 +39,9 @@ test('los bloques semanales conservan cobertura y límites mensuales', () => {
 });
 
 test('CSV exporta la base y los enlaces verificables sin serializar objetos', () => {
-  const csv=calendarioCsv({zona:'UTC',publicaciones:[{titulo:'Idea',base_contenido:'Referencia consultada',referencias:[{url:'https://example.org/noticia'}]}]});
+  const csv=calendarioCsv({zona:'UTC',publicaciones:[{titulo:'Idea',base_contenido:'Referencia consultada',referencias:[{url:'https://example.org/noticia'}],herramienta:{nombre:'YouTube Studio',url:'https://studio.youtube.com/',uso:'Revisar retención'},criterio_hashtags:'Propuestas sin volumen medido'}]});
   assert.match(csv,/base_contenido,fuentes/); assert.match(csv,/https:\/\/example.org\/noticia/);
   assert.ok(!csv.includes('[object Object]'));
+  assert.match(csv,/YouTube Studio/);assert.match(csv,/https:\/\/studio.youtube.com\//);
+  assert.match(csv,/Revisar retención/);assert.match(csv,/Propuestas sin volumen medido/);
 });
