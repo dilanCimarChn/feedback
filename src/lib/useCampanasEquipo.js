@@ -3,10 +3,10 @@ import {llamarApi} from './api';
 import {prepararCampana,firmaCampana} from './campanas';
 
 export function useCampanasEquipo(plan,setPlan) {
-  const [disponible,setDisponible]=useState(false),[campanas,setCampanas]=useState([]),[referencias,setReferencias]=useState([]),[mensaje,setMensaje]=useState(''),[guardando,setGuardando]=useState(false);
+  const [disponible,setDisponible]=useState(null),[campanas,setCampanas]=useState([]),[referencias,setReferencias]=useState([]),[mensaje,setMensaje]=useState(''),[guardando,setGuardando]=useState(false);
   const actual=useRef(plan),estado=useRef(false);
   actual.current=plan;
-  useEffect(()=>{let viva=true;llamarApi('/api/campanas',{accion:'estado'}).then(r=>{if(viva){estado.current=r.disponible;setDisponible(r.disponible);}}).catch(()=>{});return()=>{viva=false;};},[]);
+  useEffect(()=>{let viva=true;llamarApi('/api/campanas',{accion:'estado'}).then(r=>{if(viva){estado.current=r.disponible;setDisponible(r.disponible);}}).catch(()=>{if(viva){setDisponible(false);setMensaje('No se pudo comprobar la conexión del equipo. El borrador local sigue disponible.');}});return()=>{viva=false;};},[]);
   const refrescar=async()=>{try{const r=await llamarApi('/api/campanas',{accion:'listar'});setCampanas(r.campanas);setReferencias(r.referencias||[]);setMensaje('Campañas del equipo actualizadas.');return r;}catch(e){setMensaje(e.message);throw e;}};
   const guardar=async(entrada=actual.current,copia=false)=>{
     if(!entrada)return;

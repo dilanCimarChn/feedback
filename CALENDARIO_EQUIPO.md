@@ -54,4 +54,6 @@ Los calendarios y sus alternativas priorizan `gemini-3.5-flash-lite` con razonam
 
 La generación real de una publicación completa con Flash-Lite pasó las validaciones del servidor en aproximadamente 13,6 segundos, incluida la consulta de fuentes. Las etiquetas regeneradas recalculan su procedencia; editar plataforma o etiquetas elimina las atribuciones observadas que podrían haber quedado desactualizadas.
 
+La comprobación posterior en **Production** respondió **200** al generar una publicación, guardar y volver a abrir la campaña, y pedir una alternativa. La alternativa devolvió `guardada: false`; una nueva lectura confirmó que la publicación y la revisión guardadas no habían cambiado. La edición con una revisión antigua devolvió **409**. Se conservó un único calendario privado identificado como **Prueba técnica · conexión del equipo**, sin publicación en redes. Pasaron **73 pruebas** y la compilación; Chrome verificó edición, aprobación, recuperación, apertura sin borrador local, radar y vista móvil.
+
 Se actualizó Vite dentro de su versión mayor y la dependencia OIDC de Blob. Queda un aviso de auditoría de desarrollo para `picomatch` 4.0.7 y sus dependientes: el registro no ofrecía una versión corregida al verificar. Las dependencias de producción quedaron sin avisos conocidos de esa auditoría.
