@@ -96,7 +96,8 @@ async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs) {
   };
 
   const cuerpo = JSON.stringify(payload);
-  const limite = Date.now() + 32000;
+  const limite = Date.now() + Math.min(32000,tiempoRespuestaMs);
+  let fallosTransitorios=0;
   for (const modelo of [...new Set(MODELOS)]) {
     if (Date.now() >= limite) break;
     try {
@@ -119,7 +120,12 @@ async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs) {
           throw new ErrorServicio('La cuota de IA está temporalmente ocupada. Intenta más tarde.', 429, segundos);
         }
         if (response.status === 404) continue;
-        if (response.status >= 500) throw new ErrorServicio('El proveedor de IA está ocupado. Intenta de nuevo en unos segundos.', 503, 10);
+        if (response.status >= 500) {
+          // Un modelo saturado permite una alternativa de la lista configurada,
+          // dentro del mismo presupuesto. Una cuota 429 sigue deteniendo todo.
+          if(++fallosTransitorios<2&&Date.now()<limite-1000)continue;
+          throw new ErrorServicio('El proveedor de IA está ocupado. Intenta de nuevo en unos segundos.', 503, 10);
+        }
         throw new ErrorServicio('El proveedor de IA rechazó la solicitud. Revisa la configuración del servicio.', 502, 30);
       }
 

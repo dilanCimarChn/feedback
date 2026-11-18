@@ -109,6 +109,16 @@ test('429 no dispara fallback, comparte pausa por clave y devuelve Retry-After',
   } finally { globalThis.fetch = original; }
 });
 
+test('Gemini usa una sola alternativa ante saturación y mantiene el límite total sin cambiar una cuota por más peticiones', async () => {
+  const previo=globalThis.fetch;let modelos=[];
+  try {
+    globalThis.fetch=async url=>{modelos.push(String(url));return modelos.length===1?{ok:false,status:503}:{ok:true,json:async()=>({candidates:[{content:{parts:[{text:'{"ok":true}'}]}}]})};};
+    assert.equal((await consultarGemini('alternativa-saturacion',[])).ok,true);assert.equal(modelos.length,2);assert.notEqual(modelos[0],modelos[1]);
+    modelos=[];globalThis.fetch=async url=>{modelos.push(String(url));return {ok:false,status:503};};
+    await assert.rejects(consultarGemini('todos-saturados',[]),e=>e.status===503);assert.equal(modelos.length,2);
+  }finally{globalThis.fetch=previo;}
+});
+
 test('Gemini no reintenta rechazos permanentes ni timeouts como si fueran modelos ausentes', async () => {
   const original = globalThis.fetch;
   try {

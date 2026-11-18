@@ -139,7 +139,7 @@ async function investigar(pais, tema, region,opciones) {
     const consultada=r.status==='fulfilled';
     const cantidad=consultada?(i===1?r.value.videos.length:i===2?r.value.noticias.length:r.value.length):0;
     const estado=!consultada?'No disponible':i===1&&!r.value.conectado?'Sin configurar':cantidad?'Consultada':'Sin resultados';
-    const detalle=i===1?(consultada?r.value.aviso:r.reason?.message||'No se pudo consultar YouTube.'):i===2&&consultada?`${r.value.nivel}. Consulta: ${r.value.consulta}. Son menciones geográficas en noticias, no actividad de usuarios.`:i===0?'Búsquedas generales del país, sin filtro por ciudad ni sector. Solo se vinculan como referencia las coincidencias temáticas.':'';
+    const detalle=i===1?(consultada?r.value.aviso:r.reason?.message||'No se pudo consultar YouTube.'):i===2&&consultada?`${r.value.nivel}. Consulta: ${r.value.consulta}. Son menciones geográficas en noticias, no actividad de usuarios.`:i===2?'GDELT no respondió o devolvió datos no válidos. Las demás fuentes y el calendario siguen disponibles.':i===0?'Búsquedas generales del país, sin filtro por ciudad ni sector. Solo se vinculan como referencia las coincidencias temáticas.':'';
     return {fuente:['Google Trends','YouTube','GDELT'][i],estado,detalle,url:[rss,'https://developers.google.com/youtube/data/reference/rest/v3/videos/list','https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/'][i]};
   });
   estados.push(...plataformas.map(({items,...estado})=>{const externa=descubrimientos.find(f=>f.fuente===estado.fuente);return externa?{...externa,items:undefined,estadoCuenta:estado.estado,detalleCuenta:estado.detalle}:estado;}));

@@ -153,7 +153,7 @@ export function herramientaPara(red, formato, pais = '') {
     uso: 'Comparar las publicaciones de tu página y revisar si generan visitas y acciones del público objetivo. Requiere acceso de administrador.'
   };
   return {
-    nombre: 'Analíticas de X', url: 'https://analytics.x.com/',
-    uso: 'Revisar las métricas disponibles para tu cuenta y contrastar respuestas y clics con otras publicaciones del mismo tema.'
+    nombre: 'Google Sheets · seguimiento manual', url: 'https://docs.google.com/spreadsheets/',
+    uso: 'Usar la opción gratuita para registrar los conteos visibles y el CSV de este calendario, y comparar publicaciones de la misma cuenta. No requiere contratar analíticas ni API de X.'
   };
 }
