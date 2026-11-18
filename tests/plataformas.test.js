@@ -10,7 +10,7 @@ test('conexiones sociales declaran accesos faltantes, normalizan datos y aíslan
     let llamadas=0;
     globalThis.fetch=async()=>{llamadas++;throw new Error('No debe consultar sin credenciales');};
     const sinConfig=await consultarPlataformas('educación');
-    assert.equal(sinConfig.length,5);assert.ok(sinConfig.every(r=>r.estado==='Sin configurar'));assert.equal(llamadas,0);
+    assert.equal(sinConfig.length,5);assert.ok(sinConfig.filter(r=>r.fuente!=='X').every(r=>r.estado==='Sin configurar'));assert.equal(sinConfig.find(r=>r.fuente==='X').estado,'No habilitada');assert.equal(llamadas,0);
     Object.assign(process.env,{META_GRAPH_VERSION:'v99.0',FACEBOOK_PAGE_ID:'123',FACEBOOK_PAGE_ACCESS_TOKEN:'secreto-fb',INSTAGRAM_USER_ID:'456',INSTAGRAM_ACCESS_TOKEN:'secreto-ig',TIKTOK_ACCESS_TOKEN:'secreto-tiktok',X_BEARER_TOKEN:'secreto-x',LINKEDIN_ACCESS_TOKEN:'secreto-li',LINKEDIN_ORGANIZATION_ID:'789',LINKEDIN_VERSION:'202611'});
     const peticiones=[];
     globalThis.fetch=async(url,opciones)=>{
@@ -23,11 +23,13 @@ test('conexiones sociales declaran accesos faltantes, normalizan datos y aíslan
       return {ok:true,json:async()=>cuerpo};
     };
     const datos=await consultarPlataformas('educación');
-    assert.ok(datos.every(p=>p.estado==='Consultada'));
+    assert.ok(datos.filter(p=>p.fuente!=='X').every(p=>p.estado==='Consultada'));
     assert.equal(datos.find(p=>p.fuente==='Instagram').items[0].formato,'Reel');
     assert.equal(datos.find(p=>p.fuente==='Facebook').items[0].metricas.compartidos,4);
     assert.equal(datos.find(p=>p.fuente==='TikTok').items[0].metricas.vistas,100);
-    assert.equal(datos.find(p=>p.fuente==='X').items[0].metricas.vistas,null);
+    assert.equal(datos.find(p=>p.fuente==='X').estado,'No habilitada');
+    assert.deepEqual(datos.find(p=>p.fuente==='X').items,[]);
+    assert.ok(peticiones.every(p=>!p.url.includes('api.x.com')),'No se consulta X incluso si existe un token');
     assert.deepEqual(datos.find(p=>p.fuente==='LinkedIn').items[0].metricas,{});
     assert.ok(peticiones.every(p=>p.opciones.headers.Authorization.startsWith('Bearer ')));
     assert.ok(!JSON.stringify(datos).includes('secreto-'));
@@ -38,8 +40,8 @@ test('conexiones sociales declaran accesos faltantes, normalizan datos y aíslan
     for(const k of variables.filter(k=>k.includes('TOKEN')))process.env[k]+='-renovado';
     globalThis.fetch=async()=>({ok:false,status:403});
     const fallos=await consultarPlataformas('otra consulta');
-    assert.ok(fallos.every(p=>p.estado==='No disponible'&&p.items.length===0));
-    assert.ok(fallos.every(p=>/permisos/.test(p.detalle)));
+    assert.ok(fallos.filter(p=>p.fuente!=='X').every(p=>p.estado==='No disponible'&&p.items.length===0));
+    assert.ok(fallos.filter(p=>p.fuente!=='X').every(p=>/permisos/.test(p.detalle)));
   }finally{
     globalThis.fetch=original;
     for(const k of variables)if(anteriores[k]===undefined)delete process.env[k];else process.env[k]=anteriores[k];
