@@ -28,7 +28,7 @@ El repositorio anterior usaba únicamente `localStorage`; no tenía base de dato
 - Un solo espacio de equipo para esta instalación; no hay cuentas individuales, roles por miembro, bitácora completa ni aislamiento entre organizaciones.
 - `localStorage` continúa como respaldo del borrador, no como único almacenamiento compartido. Si falla la nube, la interfaz conserva los cambios y comunica que falta compartirlos.
 
-Cada campaña tiene una revisión. Las escrituras usan el ETag del documento privado y una condición de coincidencia: cambios simultáneos de campañas diferentes se fusionan con relectura; cambios de la misma revisión devuelven **409**, sin sobrescribir la versión guardada. El equipo puede conservar su edición como otra campaña.
+Cada campaña tiene una revisión. Las escrituras usan el ETag del documento privado y una condición de coincidencia: cambios simultáneos de campañas diferentes se fusionan con relectura; cambios de la misma revisión devuelven **409**, sin sobrescribir la versión guardada. Si la lectura comprimida devuelve un ETag débil, se compara con metadata y se utiliza el ETag fuerte, sin asociar contenido antiguo a una versión nueva. El equipo puede conservar su edición como otra campaña.
 
 Límites de esta versión: 30 campañas, 100 referencias manuales, 2,5 MB de JSON por campaña y 10 MB para el documento del equipo. Se omiten las piezas duplicadas dentro de bloques y los resultados de radar derivados, conservando las fuentes originales y sus estados. CSV y JSON permiten exportar el trabajo. No se eliminan campañas automáticamente.
 
@@ -47,5 +47,7 @@ Configurar conectores y permisos en [CONFIGURAR_REDES.md](CONFIGURAR_REDES.md). 
 `npm test` cubre búsqueda temática, conectores con permisos rechazados, datos parciales, normalización, agendas, revisiones, guardados simultáneos y regeneración sin escritura. `npm run build` verifica la compilación.
 
 Chrome con datos de prueba aislados comprobó generación, edición, aprobación, guardado, apertura del calendario compartido, alternativa, recuperación del texto anterior, selección desde el radar y vista móvil de 390 px. Los datos simulados se usan únicamente en la prueba, fuera del producto y del despliegue.
+
+La comprobación real del 17 de noviembre en Vercel confirmó lectura de Google Trends y diez videos temáticos de YouTube. GDELT agotó la espera; Instagram rechazó el token o lo consideró vencido. Facebook y TikTok externos no tenían sus credenciales específicas. Un calendario técnico manual, identificado como prueba y sin publicación, permitió verificar creación, actualización a revisión 2 y rechazo 409 de una edición antigua en el almacenamiento real. Gemini respondió 503 en las primeras comprobaciones; se añadió una única alternativa ante saturación, sin reintentar cuotas 429 ni aumentar el presupuesto total de tiempo.
 
 Se actualizó Vite dentro de su versión mayor y la dependencia OIDC de Blob. Queda un aviso de auditoría de desarrollo para `picomatch` 4.0.7 y sus dependientes: el registro no ofrecía una versión corregida al verificar. Las dependencias de producción quedaron sin avisos conocidos de esa auditoría.

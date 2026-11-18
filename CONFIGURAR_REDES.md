@@ -10,7 +10,7 @@ Actualizado: 17 de noviembre de 2026. Esta guía corresponde a los conectores de
 - La estrategia TSCP se basa en el PDF del equipo de marketing: tres meses recomendados, cuatro segmentos, cinco pilares, nueve publicaciones semanales y cinco borradores de email. Detalles en [MARKETING.md](MARKETING.md).
 - La ONG tiene audiencia internacional. El mercado de tendencias y la zona horaria de cada plan son configurables; no limitar el análisis a Bolivia ni asumir que una zona representa a todo el mundo.
 - Hay conectores de lectura, pero no conexión OAuth desde la interfaz ni renovación automática de tokens. Obtener tokens mediante los flujos oficiales requiere trabajo de configuración y, para OAuth, una URL de retorno y un intercambio seguro de código por token. Este repositorio todavía no proporciona esos endpoints.
-- Hay búsqueda temática de videos recientes en YouTube y descubrimiento externo limitado de Instagram por hashtags y cuentas profesionales de referencia. Las pruebas de conectores son simuladas; falta comprobar permisos y resultados de cada cuenta en vivo. No se ha implementado extracción de horas de actividad de seguidores, escucha social global, CRM, publicación ni envío de emails.
+- Hay búsqueda temática de videos recientes en YouTube y descubrimiento externo limitado de Instagram por hashtags y cuentas profesionales de referencia. Las pruebas unitarias usan simulaciones; las comprobaciones reales y sus límites se registran en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md). Un token rechazado debe renovarse antes de verificar los permisos de descubrimiento. No se ha implementado extracción de horas de actividad de seguidores, escucha social global, CRM, publicación ni envío de emails.
 
 ## Qué acceso obtener y qué costo esperar
 

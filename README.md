@@ -63,11 +63,11 @@ Sistema inteligente de control de calidad y auditoría de marca para publicacion
 
 ## Despliegue en Vercel
 
-Instancia publicada el 16 de noviembre de 2026:
+Primer despliegue, registrado el 16 de noviembre de 2026:
 
 - Aplicación: [feedback-sigma-one.vercel.app](https://feedback-sigma-one.vercel.app).
 - Proyecto: [dilancimarchn-5758/feedback](https://vercel.com/dilancimarchn-5758/feedback), plan Hobby.
-- Código desplegado desde la rama `dev`, commit `60071ac`, mediante Vercel CLI.
+- El primer despliegue usó la rama `dev`, commit `60071ac`, mediante Vercel CLI. La ampliación del radar y las campañas se publicó el 17 de noviembre; ver [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
 - `GEMINI_API_KEY` está configurada como secreto de producción. Las conexiones sociales siguen siendo opcionales. La ampliación del radar y del calendario se documenta en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
 - La publicación actual funciona sin vinculación Git. Para desplegar automáticamente futuros pushes, falta conectar GitHub a la cuenta de Vercel y vincular este repositorio.
 - `.env` y los archivos locales están excluidos mediante `.vercelignore`; los metadatos de `.vercel/` no se versionan.
