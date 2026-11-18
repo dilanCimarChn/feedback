@@ -137,7 +137,7 @@ function normalizarMedia(media, fuente) {
     formato: ({ IMAGE: 'Imagen', CAROUSEL_ALBUM: 'Carrusel', VIDEO: 'Clip' })[media.media_type] || 'No determinado',
     hashtags: [...new Set((titulo.match(/#[\p{L}\p{N}_]+/gu) || []))].slice(0, 12),
     metricas: { likes: numero(media.like_count), comentarios: numero(media.comments_count) },
-    tipoFuente: fuente.tipoFuente, consulta: fuente.consulta, consultado: fuente.consultado,
+    tipoFuente: fuente.tipoFuente, etiqueta: fuente.seleccion === 'top_media' ? 'Publicaciones destacadas por hashtag' : fuente.seleccion === 'recent_media' ? 'Publicaciones recientes por hashtag' : 'Publicaciones de cuenta competidora', consulta: fuente.consulta, consultado: fuente.consultado,
     observaciones: { tipoFuente: fuente.tipoFuente, seleccion: fuente.seleccion,
       consulta: fuente.consulta, geografiaVerificada: false,
       limite: fuente.tipoFuente === 'InstagramHashtag'
