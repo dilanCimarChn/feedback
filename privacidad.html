@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Qué datos usa Agente de Feedback, dónde se guardan y cómo solicitar su eliminación." />
+    <title>Política de privacidad | Agente de Feedback</title>
+    <link rel="canonical" href="https://feedback-sigma-one.vercel.app/privacidad" />
+    <link rel="stylesheet" href="/src/paginas-informativas.css" />
+  </head>
+  <body>
+    <a class="saltar-contenido" href="#contenido">Ir al contenido</a>
+    <div class="pagina-informativa">
+      <header class="cabecera-informativa">
+        <a class="nombre-proyecto" href="/">Agente de Feedback</a>
+        <nav aria-label="Información del proyecto">
+          <a href="/privacidad" aria-current="page">Privacidad</a>
+          <a href="/eliminacion-de-datos">Eliminación de datos</a>
+        </nav>
+      </header>
+      <main id="contenido" class="contenido-informativo">
+        <p class="fecha-informativa">Actualizado el 18 de noviembre de 2026</p>
+        <h1>Política de privacidad</h1>
+        <p class="introduccion-informativa">Esta página explica cómo trata los datos el proyecto Agente de Feedback al revisar publicaciones, preparar calendarios y consultar fuentes públicas.</p>
+        <section aria-labelledby="contacto">
+          <h2 id="contacto">Proyecto y contacto</h2>
+          <p>Esta política corresponde a Agente de Feedback en <a href="https://feedback-sigma-one.vercel.app/">feedback-sigma-one.vercel.app</a>. Para consultas sobre privacidad o sobre datos que gestione el proyecto, escribe a <a href="mailto:cimardilan@gmail.com">cimardilan@gmail.com</a>.</p>
+        </section>
+        <section aria-labelledby="datos">
+          <h2 id="datos">Qué datos se usan y para qué</h2>
+          <ul>
+            <li><strong>Perfil de marca:</strong> nombre, descripción, público, tono, colores, tipografías, reglas y referencias visuales para adaptar las revisiones y propuestas.</li>
+            <li><strong>Contenido que aportas:</strong> textos, imágenes, láminas y manuales PDF seleccionados para analizar la marca o revisar una pieza. Las imágenes se procesan en el navegador antes de enviarlas.</li>
+            <li><strong>Campañas:</strong> objetivo, público, fechas, región, preferencias, borradores, fuentes, estados y revisiones del calendario. Si aportas un histórico de métricas, se puede usar su resumen para sugerir formatos y horarios.</li>
+            <li><strong>Consultas públicas:</strong> temas, hashtags, cuentas profesionales, canales y páginas de referencia. Las fuentes pueden devolver textos, autores, enlaces, fechas y métricas públicas disponibles.</li>
+            <li><strong>Acceso:</strong> si el proyecto exige un código compartido, el navegador lo guarda y lo envía al propio servidor para autorizar solicitudes. No es tu contraseña de Facebook.</li>
+          </ul>
+        </section>
+        <section aria-labelledby="almacenamiento">
+          <h2 id="almacenamiento">Dónde se guardan</h2>
+          <p><strong>En tu navegador:</strong> se guardan la configuración y miniaturas de referencia de la marca, las preferencias y calendarios locales, el histórico importado cuando se usa y el código de acceso. Se utiliza almacenamiento local del sitio; estos datos pueden seguir ahí al cerrar la pestaña. El PDF seleccionado se envía al analizarlo, pero este flujo no lo guarda como archivo persistente del proyecto.</p>
+          <p><strong>En el servidor:</strong> las campañas compartidas, referencias y hallazgos pueden guardarse en almacenamiento privado de Vercel Blob cuando está configurado. El calendario puede guardarse automáticamente para el equipo al terminar una generación, además del guardado manual. Quienes tengan el código del equipo pueden acceder a los datos compartidos. En desarrollo se puede usar un archivo local privado del servidor.</p>
+          <p>Las consultas a proveedores también pueden permanecer temporalmente en cachés de memoria. No hay un plazo de eliminación automática configurado para las campañas y referencias persistentes. Borrar el navegador no borra las copias del servidor ni los archivos que hayas exportado.</p>
+        </section>
+        <section aria-labelledby="servicios">
+          <h2 id="servicios">Qué información reciben otros servicios</h2>
+          <ul>
+            <li><strong>Google Gemini:</strong> el servidor envía los textos, imágenes, referencias y PDF necesarios para el análisis solicitado. Al generar o cambiar una publicación, puede enviar contexto de marca, público, objetivo, preferencias, resúmenes de métricas y fuentes consultadas para producir la respuesta.</li>
+            <li><strong>Meta (Facebook e Instagram):</strong> las consultas de lectura envían identificadores de cuentas o páginas, hashtags o nombres profesionales y credenciales configuradas por el administrador en el servidor. Permiten recuperar contenido y métricas autorizados. Estas consultas no publican tus borradores ni envían tus imágenes o manuales de marca a Meta. La app no incorpora actualmente un inicio de sesión con Facebook para visitantes.</li>
+            <li><strong>YouTube, Google Trends y GDELT:</strong> reciben los parámetros de búsqueda correspondientes, como tema, canal, país o período. El tema puede proceder de la descripción de campaña. Devuelven videos públicos, búsquedas generales o noticias para orientar las propuestas.</li>
+            <li><strong>Cuentas propias, por separado:</strong> si el administrador las configura y solicita su lectura, existen conectores para Facebook, Instagram, TikTok y LinkedIn. Su contenido no se usa como tendencia competitiva del radar. TikTok queda pendiente en el radar y X está excluido de las consultas.</li>
+            <li><strong>Vercel:</strong> aloja el sitio, ejecuta el backend y puede almacenar los datos compartidos. La infraestructura puede tratar datos técnicos de las solicitudes, como dirección IP y datos del navegador. La pantalla principal también solicita tipografías a Google Fonts.</li>
+          </ul>
+          <p>El tratamiento y la conservación que hagan esos proveedores se rigen por sus condiciones y configuración. El proyecto no puede garantizar desde esta página el borrado de sus registros o copias. Puedes consultar las políticas de <a href="https://policies.google.com/privacy">Google</a>, <a href="https://www.facebook.com/privacy/policy/">Meta</a> y <a href="https://vercel.com/legal/privacy-policy">Vercel</a>.</p>
+        </section>
+        <section aria-labelledby="acceso-publico">
+          <h2 id="acceso-publico">Estado del acceso a Facebook</h2>
+          <p>El radar de Facebook permanece <strong>pendiente de acceso a páginas públicas</strong> hasta que una consulta real devuelva publicaciones de una página que no administremos. Poder leer una página propia o tener credenciales no acredita ese acceso externo.</p>
+        </section>
+        <section aria-labelledby="control">
+          <h2 id="control">Cómo gestionar tus datos</h2>
+          <p>Puedes borrar los datos del sitio en tu navegador y solicitar al contacto del proyecto la revisión o eliminación de los datos que controle. No hay una herramienta de borrado automático de campañas compartidas. La solicitud se revisa manualmente para identificar la información y comprobar que corresponde al solicitante; no se fija aquí un plazo ni se promete eliminar datos bajo control de terceros.</p>
+          <p>Consulta las <a href="/eliminacion-de-datos">instrucciones de eliminación de datos</a>, que separan el borrado local, la desvinculación de Facebook y la solicitud al proyecto.</p>
+        </section>
+      </main>
+      <footer class="pie-informativo" aria-label="Enlaces informativos">
+        <a href="/">Volver a la aplicación</a>
+        <a href="/privacidad">Política de privacidad</a>
+        <a href="/eliminacion-de-datos">Eliminación de datos</a>
+        <a href="mailto:cimardilan@gmail.com">cimardilan@gmail.com</a>
+      </footer>
+    </div>
+  </body>
+</html>

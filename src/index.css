@@ -1608,3 +1608,22 @@ button {
 .campana-estado{display:inline-block;padding:.4rem .75rem;border-radius:20px;background:#eef2f7;color:#334155;font-size:.8rem;font-weight:600}
 .campana-estado-aprobado{background:#dcfce7;color:#166534}.campana-estado-pendiente_revision{background:#fef3c7;color:#92400e}.campana-estado-descartado{background:#fee2e2;color:#991b1b}
 .campana-alternativa{padding:1rem;margin:1rem 0;background:#f2f6ff;border:1px solid #c6d7fb;border-radius:12px}
+
+/* Enlaces públicos de privacidad y eliminación, también visibles desde la app. */
+.pie-informativo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem 1.25rem;
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-subtle);
+  font-size: .875rem;
+}
+.pie-informativo a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+  text-underline-offset: .2em;
+}
