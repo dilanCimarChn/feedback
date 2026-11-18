@@ -45,7 +45,9 @@ export function firmaCampana(plan) {
 }
 export function editarPublicacion(plan,id,cambios) {
   const horario=Object.keys(cambios).some(c=>['fecha','hora','red'].includes(c))?{base_horario:'Horario ajustado por el equipo; no representa un pico de conexión medido.'}:{};
-  return {...plan,...(plan._equipo?{_equipo:{...plan._equipo,pendiente:true}}:{}),publicaciones:plan.publicaciones.map(p=>p.id===id?{...p,...cambios,...horario,...(cambios.red?{formato:FORMATOS_POR_RED[cambios.red].includes(cambios.formato||p.formato)?cambios.formato||p.formato:FORMATOS_POR_RED[cambios.red][0]}:{}),estado:estadoTrasCambio(cambios,p),editado:true}:p)};
+  const etiquetas=Object.hasOwn(cambios,'hashtags')||Object.hasOwn(cambios,'red')?{hashtags_observados:[],criterio_hashtags:'Etiquetas editadas por el equipo; validar pertinencia en esta plataforma. Sin volumen social medido.'}:{};
+  const herramienta=Object.hasOwn(cambios,'red')||Object.hasOwn(cambios,'formato')?{herramienta:null}:{};
+  return {...plan,...(plan._equipo?{_equipo:{...plan._equipo,pendiente:true}}:{}),publicaciones:plan.publicaciones.map(p=>p.id===id?{...p,...cambios,...horario,...etiquetas,...herramienta,...(cambios.red?{formato:FORMATOS_POR_RED[cambios.red].includes(cambios.formato||p.formato)?cambios.formato||p.formato:FORMATOS_POR_RED[cambios.red][0]}:{}),estado:estadoTrasCambio(cambios,p),editado:true}:p)};
 }
 function estadoTrasCambio(cambios,p) {return Object.keys(cambios).every(k=>k==='estado')?cambios.estado||p.estado:'borrador';}
 export function aplicarPropuesta(plan,id,propuesta) {

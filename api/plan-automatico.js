@@ -65,7 +65,7 @@ Devuelve JSON {"estrategia":"objetivo inferido, elección de redes, frecuencia, 
     // El limitador compartido de Gemini conserva el límite global de concurrencia.
     const lotes=esTscp?[agenda]:Array.from({length:Math.ceil(cantidad/3)},(_,i)=>agenda.slice(i*3,i*3+3));
     const requiereIA=cantidad>0||incluirEmails;
-    const respuestas=requiereIA ? await Promise.allSettled(lotes.map(lote=>consultarGemini(key,[{text:crearPrompt(lote)},{text:instrucciones||'Adapta las publicaciones a la audiencia y localidad del objetivo actual. Prioriza la descripción de esta campaña sobre datos anteriores de la marca.'},{text:precision}],{tiempoRespuestaMs:presupuestoIA}))) : [];
+    const respuestas=requiereIA ? await Promise.allSettled(lotes.map(lote=>consultarGemini(key,[{text:crearPrompt(lote)},{text:instrucciones||'Adapta las publicaciones a la audiencia y localidad del objetivo actual. Prioriza la descripción de esta campaña sobre datos anteriores de la marca.'},{text:precision}],{tiempoRespuestaMs:presupuestoIA,pensamientoRapido:true}))) : [];
     const fallo=respuestas.find(r=>r.status==='rejected');if(fallo)throw fallo.reason;
     const partes=respuestas.map((r,i)=>{const p=r.value;if(!texto(p.estrategia)||!Array.isArray(p.publicaciones)||p.publicaciones.length!==lotes[i].length)throw new Error('Lote incompleto.');return p;});
     const bruto=esTscp&&requiereIA?partes[0]:{estrategia:partes.length?partes.map(p=>p.estrategia).join('\n\n'):'Bloque sin publicaciones según la cantidad distribuida para la campaña. Las publicaciones se concentran en los otros bloques del calendario.',experimentos:[...new Set(partes.flatMap(p=>listaTextos(p.experimentos,6)))],publicaciones:partes.flatMap(p=>p.publicaciones)};

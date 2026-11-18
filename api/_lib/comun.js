@@ -70,7 +70,7 @@ const pausas = new Map();
 let bytesPendientes = 0;
 
 // Una cuota agotada no debe provocar una cascada de peticiones a otros modelos.
-export async function consultarGemini(apiKey, parts, { tiempoRespuestaMs = 18000 } = {}) {
+export async function consultarGemini(apiKey, parts, { tiempoRespuestaMs = 18000, pensamientoRapido = false } = {}) {
   const clave = huella([apiKey]);
   const comprobarPausa = () => {
     const restante = (pausas.get(clave) || 0) - Date.now();
@@ -84,12 +84,12 @@ export async function consultarGemini(apiKey, parts, { tiempoRespuestaMs = 18000
   try {
     return await limitarGemini(async () => {
       comprobarPausa();
-      return invocarGemini(apiKey, parts, clave, Math.max(1, Math.min(32000, Number(tiempoRespuestaMs) || 18000)));
+      return invocarGemini(apiKey, parts, clave, Math.max(1, Math.min(32000, Number(tiempoRespuestaMs) || 18000)),pensamientoRapido);
     });
   } finally { bytesPendientes -= bytes; }
 }
 
-async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs) {
+async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs,pensamientoRapido) {
   const payload = {
     contents: [{ parts }],
     generationConfig: { responseMimeType: 'application/json' }
@@ -98,15 +98,20 @@ async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs) {
   const cuerpo = JSON.stringify(payload);
   const limite = Date.now() + Math.min(32000,tiempoRespuestaMs);
   let fallosTransitorios=0;
-  for (const modelo of [...new Set(MODELOS)]) {
+  const modelos=pensamientoRapido?[process.env.GEMINI_MODEL,'gemini-3.5-flash-lite',...MODELOS].filter(Boolean):MODELOS;
+  for (const modelo of [...new Set(modelos)]) {
     if (Date.now() >= limite) break;
     try {
+      // Solo modelos cuya compatibilidad está documentada. Los alias y
+      // modelos personalizados conservan su configuración original.
+      const nivel=pensamientoRapido?(/^gemini-3(?:\.[56])?-flash(?:-preview|-lite)?$/.test(modelo)?'minimal':/^gemini-3\.[78]-flash$/.test(modelo)?'low':null):null;
+      const cuerpoModelo=nivel?JSON.stringify({...payload,generationConfig:{...payload.generationConfig,thinkingConfig:{thinkingLevel:nivel}}}):cuerpo;
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-          body: cuerpo,
+          body: cuerpoModelo,
           signal: AbortSignal.timeout(Math.min(tiempoRespuestaMs, Math.max(1, limite - Date.now())))
         }
       );

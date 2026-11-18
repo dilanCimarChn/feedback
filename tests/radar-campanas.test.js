@@ -30,6 +30,7 @@ test('edición y alternativas conservan identificadores, recuperan versión prev
   assert.equal(editarPublicacion(editada,id,{estado:'pendiente_revision'}).publicaciones[0].estado,'pendiente_revision');
   const aplicada=aplicarPropuesta(editada,id,{...editada.publicaciones[0],fecha:'2027-01-01',red:'X',copy:'Alternativa'}).publicaciones[0];assert.equal(aplicada.fecha,'2026-11-18');assert.equal(aplicada.red,'Facebook');assert.equal(aplicada.id,id);assert.equal(aplicada.versionAnterior.copy,'Texto revisado');
   const cambio=editarPublicacion(original,id,{red:'YouTube'}).publicaciones[0];assert.equal(cambio.formato,'Clip');assert.match(cambio.base_horario,/equipo/);
+  assert.deepEqual(cambio.hashtags_observados,[]);assert.equal(cambio.herramienta,null);assert.match(cambio.criterio_hashtags,/Sin volumen/);
   const limpia=prepararCampana({...original,access_token:'secreto',perfil:{apiKey:'oculta'},bloques:[{publicaciones:original.publicaciones,evidencia:{}}]});assert.ok(!JSON.stringify(limpia).includes('secreto'));assert.ok(!limpia._equipo);assert.ok(!limpia.bloques[0].publicaciones);
   assert.throws(()=>prepararCampana({...original,publicaciones:[{...original.publicaciones[0],formato:'Texto'}]}),/formato/);
   assert.throws(()=>prepararCampana({...original,publicaciones:[{...original.publicaciones[0],copy:''}]}),/aprobar/);
@@ -66,10 +67,10 @@ test('regenerar devuelve una alternativa sin escribir ni cambiar la agenda y rec
   const prev=Object.fromEntries(['EQUIPO_CODIGO_ACCESO','APP_ACCESS_CODE','BLOB_READ_WRITE_TOKEN','GEMINI_API_KEY'].map(k=>[k,process.env[k]])),fetch=globalThis.fetch,ejecutar=repositorioCampanas.ejecutar;
   try {
     Object.assign(process.env,{EQUIPO_CODIGO_ACCESO:'equipo',APP_ACCESS_CODE:'otro-codigo',BLOB_READ_WRITE_TOKEN:'prueba',GEMINI_API_KEY:'prueba'});
-    const plan=nueva(),original=structuredClone(plan);let llamadas=0;
+    const plan=nueva();plan.publicaciones[0].hashtags_observados=[{hashtag:'#Anterior',red:'Facebook',url:'https://facebook.com/anterior'}];plan.publicaciones[0].criterio_hashtags='Anterior observada';const original=structuredClone(plan);let llamadas=0;
     repositorioCampanas.ejecutar=async b=>{assert.equal(b.accion,'abrir');return {plan,revision:3};};
     globalThis.fetch=async()=>{llamadas++;return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({titulo:'Otra idea',gancho:'Aprender',guion:'Dos escenas',copy:'Nuevo borrador',cta:'Comenta',metrica:'Comentarios',motivo:'Hipótesis editorial',visual:'Paleta de la marca',distribucion:'Perfil propio',referencias:[],hashtags:['#Escuela'],palabras_clave:['educación']})}]}}]})};};
     const invocar=async revision=>{const r=res();await regenerar({method:'POST',headers:{'x-codigo-acceso':'equipo'},body:{id:plan.id,revision,publicacionId:plan.publicaciones[0].id}},r);return r;};
-    assert.equal((await invocar(2)).code,409);assert.equal(llamadas,0);const r=await invocar(3);assert.equal(r.code,200);assert.equal(r.data.guardada,false);assert.equal(r.data.propuesta.fecha,original.publicaciones[0].fecha);assert.equal(r.data.propuesta.estado,'borrador');assert.equal(r.data.propuesta.copy,'Nuevo borrador');assert.deepEqual(plan,original);assert.equal(llamadas,1);
+    assert.equal((await invocar(2)).code,409);assert.equal(llamadas,0);const r=await invocar(3);assert.equal(r.code,200);assert.equal(r.data.guardada,false);assert.equal(r.data.propuesta.fecha,original.publicaciones[0].fecha);assert.equal(r.data.propuesta.estado,'borrador');assert.equal(r.data.propuesta.copy,'Nuevo borrador');assert.deepEqual(r.data.propuesta.hashtags_observados,[]);assert.match(r.data.propuesta.criterio_hashtags,/propuestas/);assert.deepEqual(plan,original);assert.equal(llamadas,1);
   }finally{globalThis.fetch=fetch;repositorioCampanas.ejecutar=ejecutar;for(const [k,v] of Object.entries(prev))v===undefined?delete process.env[k]:process.env[k]=v;}
 });

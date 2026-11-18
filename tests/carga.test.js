@@ -131,6 +131,16 @@ test('Gemini no reintenta rechazos permanentes ni timeouts como si fueran modelo
   } finally { globalThis.fetch=original; }
 });
 
+test('calendarios reducen la latencia con niveles compatibles sin cambiar la revisión multimodal',async()=>{
+  const previo=globalThis.fetch,configuraciones=[];
+  try {
+    globalThis.fetch=async(url,o)=>{configuraciones.push({url:String(url),config:JSON.parse(o.body).generationConfig});return configuraciones.length===1?{ok:false,status:503}:configuraciones.length===2?{ok:false,status:404}:{ok:true,json:async()=>({candidates:[{content:{parts:[{text:'{}'}]}}]})};};
+    await consultarGemini('rapido-calendario',[],{pensamientoRapido:true});
+    assert.match(configuraciones[0].url,/gemini-3\.5-flash-lite/);assert.equal(configuraciones[0].config.thinkingConfig.thinkingLevel,'minimal');assert.equal(configuraciones[1].config.thinkingConfig.thinkingLevel,'minimal');assert.equal(configuraciones[2].config.thinkingConfig.thinkingLevel,'low');
+    await consultarGemini('normal-revision',[]);assert.equal(configuraciones[3].config.thinkingConfig,undefined);
+  }finally{globalThis.fetch=previo;}
+});
+
 test('los calendarios pueden ampliar la espera sin superar el presupuesto total de IA', async () => {
   const originalFetch=globalThis.fetch, originalTimeout=AbortSignal.timeout;
   const limites=[];
