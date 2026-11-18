@@ -23,7 +23,7 @@ test('Facebook externo no reutiliza el token propio, conserva enlaces originales
   try {
     process.env.FACEBOOK_PAGE_ID='111';process.env.FACEBOOK_PAGE_ACCESS_TOKEN='token-propio';process.env.META_GRAPH_VERSION='v25.0';process.env.FACEBOOK_DISCOVERY_PAGE_IDS='111,222,333';delete process.env.FACEBOOK_PUBLIC_ACCESS_TOKEN;
     let llamadas=0;globalThis.fetch=async()=>{llamadas++;throw new Error('No debe consultar');};
-    assert.equal((await consultarFacebookExterno()).estado,'Sin configurar');assert.equal(llamadas,0);
+    assert.equal((await consultarFacebookExterno()).estado,'Pendiente de acceso a páginas públicas');assert.equal(llamadas,0);
     process.env.FACEBOOK_PUBLIC_ACCESS_TOKEN='publico-autorizado';
     globalThis.fetch=async(url,opts)=>{llamadas++;const u=new URL(url);assert.ok(!u.pathname.includes('111'));assert.equal(opts.headers.Authorization,'Bearer publico-autorizado');if(u.pathname.includes('333'))return {ok:false,status:403,json:async()=>({error:{message:'NO IMPRIMIR'}})};return {ok:true,json:async()=>({data:[{message:'Educación #Comunidad',created_time:'2026-11-16T10:00:00Z',permalink_url:'https://www.facebook.com/story.php?story_fbid=444&id=222&tracking=remove',shares:{count:9}},{message:'Enlace no válido',permalink_url:'https://host-inventado.test/post/1'}]})};};
     const r=await consultarFacebookExterno();assert.equal(llamadas,2);assert.equal(r.estado,'Consultada');assert.equal(r.parcial,true);assert.equal(r.items.length,1);assert.equal(r.items[0].metricas.compartidos,9);assert.match(r.items[0].url,/story_fbid=444/);assert.ok(!r.items[0].url.includes('tracking'));assert.ok(!JSON.stringify(r).includes('NO IMPRIMIR'));

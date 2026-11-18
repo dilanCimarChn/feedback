@@ -62,6 +62,7 @@ test('consulta un hashtag temático, conserva fuentes externas y no inventa mét
     assert.equal(resultado.estado, 'Consultada');
     assert.equal(resultado.items.length, 1);
     assert.equal(resultado.items[0].url, 'https://www.instagram.com/p/EDU_1/');
+    assert.equal(resultado.items[0].etiqueta, 'Publicaciones destacadas por hashtag');
     assert.equal(resultado.items[0].formato, 'Clip', 'VIDEO no prueba que sea Reel');
     assert.equal(resultado.items[0].metricas.likes, null);
     assert.equal(resultado.items[0].metricas.comentarios, 2);

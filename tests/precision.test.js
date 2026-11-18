@@ -16,7 +16,7 @@ test('el histórico ignora pagados, registros futuros y datos de más de 90 día
 
 test('las referencias conservan fuente real y rechazan IDs inventados', () => {
   const catalogo=catalogarFuentes({noticias:[{titulo:'Logística humanitaria',url:'https://example.org/noticia',fecha:'20261115T000000Z'}],tendencias:[],plataformas:[{fuente:'Instagram',items:[{titulo:'Una cuenta',url:'javascript:alert(1)'}]}]});
-  assert.equal(catalogo[0].id,'F1'); assert.equal(catalogo[1].url,'');
+  assert.equal(catalogo[0].id,'F1'); assert.equal(catalogo.length,1);
   const pieza={fecha:'2026-11-20',referencias:['F1','F1']};
   const resultado=justificarPieza(pieza,catalogo,'2026-11-15T00:00:00Z');
   assert.equal(resultado.referencias.length,1);
