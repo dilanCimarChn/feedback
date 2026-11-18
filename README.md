@@ -95,3 +95,31 @@ Documentación del proveedor: https://blog.gdeltproject.org/gdelt-doc-2-0-api-de
 ## Campañas compartidas
 
 El calendario permite editar, enviar a revisión, aprobar, descartar y generar una alternativa de cada publicación. Las campañas y referencias manuales se guardan en Vercel Blob privado con un código del equipo y control de revisiones; el navegador conserva un respaldo. Preferencias avanzadas opcionales, estados y configuración en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md). La aprobación no publica en redes.
+
+## Páginas públicas para Meta
+
+La app «Agente de Feedback» incorpora dos documentos HTML independientes:
+
+- Política de privacidad: `/privacidad`, desde `privacidad.html`.
+- Instrucciones de eliminación: `/eliminacion-de-datos`, desde `eliminacion-de-datos.html`.
+
+Vite compila ambas páginas junto con la aplicación. Las dos reescrituras específicas de `vercel.json` conservan esas rutas al abrirlas directamente o recargar. No se añade una ruta general que convierta cualquier URL en la pantalla principal. Las páginas incluyen todo el texto sin JavaScript, no montan la app ni llaman sus APIs y no exigen código de acceso. La aplicación enlaza a ambas en su pie.
+
+El contenido describe los datos comprobados en el código: marca, miniaturas, preferencias, calendarios e histórico opcional en almacenamiento del navegador; campañas, referencias y hallazgos compartidos en Blob privado o archivo de desarrollo; solicitudes de análisis a Gemini y consultas de lectura a proveedores públicos. La eliminación diferencia el borrado del navegador, la revocación en Facebook y la solicitud manual al proyecto en **cimardilan@gmail.com**. No hay borrado automático de campañas ni plazos fijos de retención configurados. Si cambia el tratamiento de datos, hay que actualizar estos textos.
+
+Para revisar la compilación antes del despliegue:
+
+```bash
+npm test
+npm run build
+npm run preview -- --host 127.0.0.1
+```
+
+Abrir `http://127.0.0.1:4173/privacidad` y `http://127.0.0.1:4173/eliminacion-de-datos` en una ventana privada y recargar. Cada ruta debe mostrar su título y contenido propio; los enlaces cruzados y el contacto deben funcionar. Las APIs conservan la comprobación de código que ya tenían cuando está configurado; las páginas informativas no la omiten para otras funciones.
+
+Después de desplegar esta versión, los enlaces para la configuración de Meta serán:
+
+- https://feedback-sigma-one.vercel.app/privacidad
+- https://feedback-sigma-one.vercel.app/eliminacion-de-datos
+
+La preparación de estas páginas no concede acceso a contenido público de Facebook: el radar sigue pendiente hasta obtener publicaciones reales de una página que no administremos. No se incorpora una devolución de llamada automática de borrado; la segunda URL contiene instrucciones públicas para presentar una solicitud.
