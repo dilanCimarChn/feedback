@@ -3,7 +3,8 @@ const cache = crearCacheAsync({ max: 40 });
 const ID_VIDEO = /^[\w-]{11}$/;
 const idValido = valor => typeof valor === 'string' && ID_VIDEO.test(valor);
 const TEXTO_ALCANCE = 'El país indica disponibilidad de reproducción o selección del catálogo; no acredita residencia del creador ni ubicación o actividad de su audiencia. Las vistas y likes son acumulados, no crecimiento ni eficacia en otras redes.';
-const contador = valor => typeof valor === 'string' && /^\d{1,20}$/.test(valor) ? valor : typeof valor === 'number' && Number.isFinite(valor) && valor >= 0 ? valor : null;
+const contador = valor => typeof valor === 'string' && /^\d{1,20}$/.test(valor) ? valor : typeof valor === 'number' && Number.isSafeInteger(valor) && valor >= 0 ? valor : null;
+const ordenarVideos=(videos,orden)=>orden==='viewCount'?[...videos].sort((a,b)=>{const va=BigInt(a.vistas??-1),vb=BigInt(b.vistas??-1);return va===vb?0:va>vb?-1:1;}):videos;
 
 function errorProveedor(status, data) {
   const razones = Array.isArray(data?.error?.errors) ? data.error.errors.map(e=>e?.reason) : [];
@@ -39,24 +40,30 @@ function normalizarVideo(video, origen, metricas = true) {
     duracion:metricas && typeof video.contentDetails?.duration === 'string' && /^P[\dA-Z.]+$/.test(video.contentDetails.duration) ? video.contentDetails.duration.slice(0, 80) : null,
     vistas:metricas ? contador(video.statistics?.viewCount) : null,
     likes:metricas ? contador(video.statistics?.likeCount) : null,
+    comentarios:metricas ? contador(video.statistics?.commentCount) : null,
+    autor:typeof video.snippet?.channelTitle==='string'?video.snippet.channelTitle.slice(0,200):null,
+    canalId:typeof video.snippet?.channelId==='string'&&/^UC[\w-]{22}$/.test(video.snippet.channelId)?video.snippet.channelId:null,
     hashtags:[...new Set(descripcion.match(/#[\p{L}\p{N}_]+/gu) || [])].filter(h=>h.length<=80).slice(0, 8),
     origen,
   };
 }
 
-export async function obtenerSenales(region = 'BO', tema = '', {dias=7,idioma=''} = {}) {
+export async function obtenerSenales(region = 'BO', tema = '', {dias=7,idioma='',orden='relevance',palabrasClave='',canalId=''} = {}) {
   if (!/^[A-Z]{2}$/.test(region)) throw new Error('País no válido.');
   if (typeof tema !== 'string') throw new Error('Tema no válido.');
   if(!Number.isInteger(dias)||dias<1||dias>30||typeof idioma!=='string'||(idioma&&!/^[a-z]{2}(?:-[A-Za-z]{2,4})?$/.test(idioma)))throw new Error('Periodo o idioma de búsqueda no válido.');
-  const consulta = tema.normalize('NFC').trim().replace(/\s+/g, ' ').slice(0, 150);
-  const modo = consulta ? 'busqueda_tematica' : 'seleccion_popular';
-  const alcance = `${consulta ? `Hasta 10 videos publicados en los últimos ${dias} días y encontrados por tema; primera página por relevancia, sin ranking de tendencias.` : 'Hasta 15 videos de la selección popular de YouTube por país, sin filtro temático ni histórico.'} ${TEXTO_ALCANCE}`;
-  const base = {region,modo,consulta,alcance,dias,idioma};
+  if(!['relevance','viewCount','date'].includes(orden)||typeof palabrasClave!=='string'||palabrasClave.length>150||typeof canalId!=='string'||(canalId&&!/^UC[\w-]{22}$/.test(canalId)))throw new Error('Revisa el orden, las palabras clave y el ID de canal público de YouTube.');
+  const consulta = [tema,palabrasClave].filter(Boolean).join(' ').normalize('NFC').trim().replace(/\s+/g, ' ').slice(0, 300);
+  const modo = consulta||canalId ? 'busqueda_tematica' : 'seleccion_popular';
+  const nombreOrden={relevance:'relevancia',viewCount:'vistas acumuladas',date:'fecha'}[orden];
+  const alcance = `${modo==='busqueda_tematica' ? `Hasta 10 videos publicados en los últimos ${dias} días y encontrados por tema o canal; primera página ordenada por ${nombreOrden}. La selección depende de los filtros, puede ser incompleta y no es un ranking completo de YouTube.` : 'Hasta 15 videos de la selección popular de YouTube por país, sin filtro temático ni histórico.'} ${TEXTO_ALCANCE}`;
+  const etiqueta = modo === 'busqueda_tematica' && orden === 'viewCount' ? `Más vistos entre los resultados publicados en los últimos ${dias} días` : modo === 'busqueda_tematica' ? `Resultados publicados en los últimos ${dias} días por ${nombreOrden}` : 'Selección popular de YouTube';
+  const base = {region,modo,consulta,alcance,etiqueta,dias,idioma,orden,canalId,palabrasClave};
   const key = process.env.YOUTUBE_API_KEY?.trim();
   if (!key) return { ...base, conectado:false, videos:[], consultado:null, aviso:'YouTube sin conectar. Configura YOUTUBE_API_KEY en el servidor para consultar videos y sus estadísticas públicas.' };
-  return cache(`${region}:${huella([consulta.toLowerCase(),key,dias,idioma])}`, async () => {
+  return cache(`${region}:${huella([consulta.toLowerCase(),key,dias,idioma,orden,canalId])}`, async () => {
     const consultado = new Date().toISOString();
-    if (!consulta) {
+    if (modo==='seleccion_popular') {
       const params = new URLSearchParams({ part:'snippet,statistics,contentDetails', chart:'mostPopular', regionCode:region, maxResults:'15' });
       const data = await consultar('videos', params, key);
       const vistos = new Set();
@@ -67,7 +74,9 @@ export async function obtenerSenales(region = 'BO', tema = '', {dias=7,idioma=''
     const desde = new Date(Date.parse(consultado) - dias * 86400000).toISOString();
     // Una sola página por consulta: search.list tiene su propia cuota diaria.
     // https://developers.google.com/youtube/data/reference/rest/v3/search/list
-    const params = new URLSearchParams({ part:'snippet', type:'video', q:consulta, regionCode:region, publishedAfter:desde, publishedBefore:consultado, order:'relevance', maxResults:'10' });
+    const params = new URLSearchParams({ part:'snippet', type:'video', regionCode:region, publishedAfter:desde, publishedBefore:consultado, order:orden, maxResults:'10' });
+    if(consulta)params.set('q',consulta);
+    if(canalId)params.set('channelId',canalId);
     if(idioma)params.set('relevanceLanguage',idioma);
     const busqueda = await consultar('search', params, key);
     const seleccion = new Map();
@@ -92,7 +101,7 @@ export async function obtenerSenales(region = 'BO', tema = '', {dias=7,idioma=''
       return { ...resultadoBase, parcial:true, videos:[...seleccion.values()].map(v=>normalizarVideo(v,'Búsqueda temática de YouTube · sin métricas verificadas',false)), aviso:`Se encontraron videos por tema, pero no se pudieron consultar sus detalles y métricas. ${error.message}${geo} ${TEXTO_ALCANCE}` };
     }
     const porId = new Map(detalles.items.filter(v=>idValido(v?.id) && seleccion.has(v.id) && enPeriodo(v)).map(v=>[v.id,v]));
-    const videos = [...seleccion.keys()].filter(id=>porId.has(id)).map(id=>normalizarVideo(porId.get(id),`Búsqueda temática de YouTube · últimos ${dias} días`));
+    const videos = ordenarVideos([...seleccion.keys()].filter(id=>porId.has(id)).map(id=>normalizarVideo(porId.get(id),`Búsqueda temática de YouTube · últimos ${dias} días`)),orden);
     return { ...resultadoBase, videos, parcial:videos.length < seleccion.size, aviso:`Búsqueda temática reciente de YouTube, con métricas públicas consultadas; no es un ranking de tendencias.${videos.length < seleccion.size ? ' Algunos resultados no devolvieron detalles y se excluyeron.' : ''}${geo} ${TEXTO_ALCANCE}` };
   });
 }
