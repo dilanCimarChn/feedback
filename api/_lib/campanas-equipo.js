@@ -1,6 +1,8 @@
 import {get,head,put,BlobPreconditionFailedError} from '@vercel/blob';
 import {prepararCampana,referenciaManual,idValido} from '../../src/lib/campanas.js';
 import {timingSafeEqual} from 'node:crypto';
+import {crearAlmacenLocal} from './almacen-local.js';
+import {prepararHallazgo} from '../../src/lib/radar.js';
 
 const RUTA='feedback/equipo-v1.json';
 export class ErrorCampana extends Error {constructor(message,status=400){super(message);this.status=status;}}
@@ -14,7 +16,9 @@ export function validarAccesoEquipo(req,res) {
   res.setHeader?.('Cache-Control','private, no-store');
   return true;
 }
-export const almacenamientoDisponible=()=>Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim()||(process.env.BLOB_STORE_ID&&process.env.VERCEL_OIDC_TOKEN));
+const blobConfigurado=()=>Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim()||(process.env.BLOB_STORE_ID&&process.env.VERCEL_OIDC_TOKEN));
+export const almacenamientoLocal=()=>process.env.NODE_ENV==='development'&&!process.env.VERCEL&&!blobConfigurado();
+export const almacenamientoDisponible=()=>blobConfigurado()||almacenamientoLocal();
 const opciones=()=>({access:'private',...(process.env.BLOB_READ_WRITE_TOKEN?{token:process.env.BLOB_READ_WRITE_TOKEN}:{})});
 export function crearAlmacenBlob({leerBlob=get,leerMetadata=head,escribirBlob=put}={}){return {
   async leer(){
@@ -38,19 +42,21 @@ export function crearAlmacenBlob({leerBlob=get,leerMetadata=head,escribirBlob=pu
   }
 };}
 export const almacenBlob=crearAlmacenBlob();
-export function crearRepositorioCampanas(almacen=almacenBlob) {
+const local=crearAlmacenLocal();
+const almacenAutomatico={leer:()=> (almacenamientoLocal()?local:almacenBlob).leer(),escribir:(datos,etag)=>(almacenamientoLocal()?local:almacenBlob).escribir(datos,etag)};
+export function crearRepositorioCampanas(almacen=almacenAutomatico) {
   async function ejecutar(b) {
-    if(!['listar','abrir','guardar','referencia'].includes(b.accion))throw new ErrorCampana('Acción de campañas no válida.');
-    let plan,manual;
-    try {plan=b.accion==='guardar'?prepararCampana(b.plan):null;manual=b.accion==='referencia'?referenciaManual(b.referencia):null;}
+    if(!['listar','abrir','guardar','referencia','hallazgo'].includes(b.accion))throw new ErrorCampana('Acción de campañas no válida.');
+    let plan,manual,hallazgo;
+    try {plan=b.accion==='guardar'?prepararCampana(b.plan):null;manual=b.accion==='referencia'?referenciaManual(b.referencia):null;hallazgo=b.accion==='hallazgo'?prepararHallazgo(b.hallazgo):null;}
     catch(e){throw new ErrorCampana(e.message);}
     if(plan&&(!Number.isInteger(b.revision)||b.revision<0))throw new ErrorCampana('Falta la versión de la campaña.');
     for(let intento=0;intento<3;intento++) {
       let lectura;
       try{lectura=await almacen.leer();}catch(e){if(e.status===409&&intento<2)continue;throw e;}
       const {datos,etag}=lectura;
-      datos.campanas||={};datos.referencias||=[];
-      if(b.accion==='listar')return {campanas:Object.values(datos.campanas).map(c=>({id:c.plan.id,nombre:c.plan.nombre,inicio:c.plan.inicio,fin:c.plan.fin,publicaciones:c.plan.publicaciones.length,revision:c.revision,actualizado:c.actualizado})).sort((a,b)=>b.actualizado.localeCompare(a.actualizado)),referencias:datos.referencias};
+      datos.campanas||={};datos.referencias||=[];datos.hallazgos||=[];
+      if(b.accion==='listar')return {campanas:Object.values(datos.campanas).map(c=>({id:c.plan.id,nombre:c.plan.nombre,inicio:c.plan.inicio,fin:c.plan.fin,publicaciones:c.plan.publicaciones.length,revision:c.revision,actualizado:c.actualizado})).sort((a,b)=>b.actualizado.localeCompare(a.actualizado)),referencias:datos.referencias,hallazgos:datos.hallazgos};
       if(b.accion==='abrir') {
         if(!idValido(b.id))throw new ErrorCampana('La campaña no es válida.');
         const c=datos.campanas[b.id];if(!c)throw new ErrorCampana('La campaña no existe en el equipo.',404);return c;
@@ -61,6 +67,11 @@ export function crearRepositorioCampanas(almacen=almacenBlob) {
         if((actual?.revision||0)!==b.revision)throw new ErrorCampana('Otra persona actualizó esta campaña. Tus cambios se conservan aquí: guárdalos como copia o abre la versión del equipo.',409);
         if(!actual&&Object.keys(datos.campanas).length>=30)throw new ErrorCampana('El equipo alcanzó 30 campañas. Conserva una exportación y organiza las campañas antes de añadir otra.');
         respuesta={plan,revision:(actual?.revision||0)+1,actualizado:new Date().toISOString()};datos.campanas[plan.id]=respuesta;
+      } else if(hallazgo) {
+        const existente=datos.hallazgos.find(h=>h.id===hallazgo.id&&h.consultado===hallazgo.consultado);
+        if(existente)return {hallazgo:existente};
+        if(datos.hallazgos.length>=200)throw new ErrorCampana('El equipo alcanzó 200 observaciones guardadas. Exporta los hallazgos antes de reorganizarlos.');
+        datos.hallazgos.push(hallazgo);respuesta={hallazgo};
       } else {
         const existente=datos.referencias.find(r=>r.url===manual.url);
         if(existente)return {referencia:existente};
