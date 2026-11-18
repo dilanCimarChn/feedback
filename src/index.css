@@ -1480,6 +1480,20 @@ button {
 .tendencias svg { width: 100%; margin: 20px 0 4px; }
 .tendencias details { margin-top: 18px; }
 .tendencias-tabla { max-height: 240px; overflow: auto; }
+.tendencias-consulta { align-items:end; }
+.tendencias-consulta label:first-child { flex:1 1 270px; }
+.tendencias-consulta label:nth-child(2) { flex:0 1 210px; }
+.tendencias-conexiones article { display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+.tendencias-conexiones article > strong { font-size:15px; }
+.tendencias .tendencias-tipo-fuente { margin:12px 0 0; font-size:10px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; }
+.tendencias .tendencias-estado-fuente { margin:0 0 4px; font-weight:600; color:var(--text-primary); }
+.tendencias .tendencias-cuenta-estado { display:grid; gap:5px; margin:12px 0 8px; padding-top:12px; width:100%; border-top:1px solid var(--border-subtle); font-size:12px; }
+.tendencias-cuenta-estado > span { font-size:11px; color:var(--text-muted); }
+.tendencias-conexiones article > a { margin-top:auto; padding-top:12px; font-size:12px; }
+.tendencias-distintivo { display:inline-block; padding:5px 9px; border-radius:5px; background:#edf6f5; color:#185e59; font-size:11px; font-weight:600; }
+.tendencias-cuenta { border-top:1px solid var(--border-subtle); padding-top:16px; }
+.tendencias-cuenta summary { font-size:14px; }
+.tendencias .marketing-videos .btn-secundario { margin-top:14px; }
 .tendencias table { width: 100%; text-align: left; font-size: 12px; border-collapse: collapse; }
 .tendencias td, .tendencias th { padding: 8px; border-bottom: 1px solid var(--border-subtle); }
 @media (max-width: 800px) { .tendencias-filtros, .tendencias-grid { grid-template-columns: 1fr; } }
@@ -1582,3 +1596,15 @@ button {
 .marketing-editor:focus { outline:none; }
 .marketing-editor:focus-visible { outline:2px solid var(--border-focus); outline-offset:4px; }
 @media (max-width:650px) { .marketing-inicio-grid { grid-template-columns:1fr; gap:16px; } .marketing-calendario-mensual { grid-template-columns:repeat(7,minmax(0,1fr)); } }
+.radar-resultados{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:1rem;margin-top:1.2rem}
+.radar-resultado{border:1px solid var(--borde,#dbe2eb);border-radius:14px;padding:1.1rem;min-width:0;overflow-wrap:anywhere;background:var(--fondo,#fff)}
+.radar-resultado small{display:block;line-height:1.6;color:var(--texto-secundario,#657183)}
+.radar-resultado h3{margin:.8rem 0;font-size:1.05rem;line-height:1.5}
+.radar-meta{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.campana-plataformas{border:1px solid var(--borde,#dbe2eb);border-radius:12px;padding:1rem;display:flex;flex-wrap:wrap;gap:1rem}
+.campana-plataformas label{display:flex;align-items:center;gap:.5rem;margin:0}
+.campana-plataformas input{width:auto;margin:0}
+.campana-guardado{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin:1rem 0;font-size:.88rem}
+.campana-estado{display:inline-block;padding:.4rem .75rem;border-radius:20px;background:#eef2f7;color:#334155;font-size:.8rem;font-weight:600}
+.campana-estado-aprobado{background:#dcfce7;color:#166534}.campana-estado-pendiente_revision{background:#fef3c7;color:#92400e}.campana-estado-descartado{background:#fee2e2;color:#991b1b}
+.campana-alternativa{padding:1rem;margin:1rem 0;background:#f2f6ff;border:1px solid #c6d7fb;border-radius:12px}
