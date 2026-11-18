@@ -68,7 +68,7 @@ Instancia publicada el 16 de noviembre de 2026:
 - Aplicación: [feedback-sigma-one.vercel.app](https://feedback-sigma-one.vercel.app).
 - Proyecto: [dilancimarchn-5758/feedback](https://vercel.com/dilancimarchn-5758/feedback), plan Hobby.
 - Código desplegado desde la rama `dev`, commit `60071ac`, mediante Vercel CLI.
-- `GEMINI_API_KEY` está configurada como secreto de producción. Las conexiones sociales siguen siendo opcionales.
+- `GEMINI_API_KEY` está configurada como secreto de producción. Las conexiones sociales siguen siendo opcionales. La ampliación del radar y del calendario se documenta en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
 - La publicación actual funciona sin vinculación Git. Para desplegar automáticamente futuros pushes, falta conectar GitHub a la cuenta de Vercel y vincular este repositorio.
 - `.env` y los archivos locales están excluidos mediante `.vercelignore`; los metadatos de `.vercel/` no se versionan.
 
@@ -84,10 +84,14 @@ Para obtener y configurar los accesos oficiales, consultar [CONFIGURAR_REDES.md]
 
 Prioriza las seis redes **Facebook, Instagram, TikTok, X (Twitter), LinkedIn y YouTube**, con conectores de lectura oficiales configurables en el servidor. Sin credenciales se muestra `Sin configurar`; no se inventan datos. Configuración y alcance de cada conexión en [REDES_SOCIALES.md](REDES_SOCIALES.md).
 
-La pestaña **Fuentes y tendencias** consulta `/api/tendencias`, que reúne Google Trends RSS, YouTube (si tiene clave) y noticias GDELT de los últimos 7 días. Cada fuente tiene estado propio: un fallo de GDELT no impide ver las tendencias disponibles ni continuar al calendario. El tema es opcional y orienta las noticias; las búsquedas y videos son señales generales del país, no un ranking del nicho.
+La pestaña **Fuentes y tendencias** consulta `/api/tendencias`, que reúne Google Trends RSS, YouTube (si tiene clave) y noticias GDELT de los últimos 7 días. Cada fuente tiene estado propio: un fallo de GDELT no impide ver las tendencias disponibles ni continuar al calendario. El tema orienta las noticias y la búsqueda de videos recientes de YouTube. La consulta permite 1–30 días y muestra el alcance real de Instagram, TikTok Discovery y Facebook externo según sus permisos; no es un ranking completo de ninguna red.
 
 Muestra las señales obtenidas, el momento de consulta y enlaces a las fuentes. No mide alcance, engagement ni mejores horarios de Instagram o TikTok. Las señales se pueden llevar al agente para evaluar su pertinencia y generar una campaña; no se presentan como garantía de rendimiento.
 
 La consulta es manual en esta pestaña y automática al generar un calendario. Hay caché en memoria de 15 minutos y no hay archivo persistente ni actualización con la aplicación cerrada. Este radar no incluye historial de cobertura. Si ninguna fuente responde, lo informa y permite continuar con una propuesta editorial inicial, sin inventar datos.
 
 Documentación del proveedor: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
+
+## Campañas compartidas
+
+El calendario permite editar, enviar a revisión, aprobar, descartar y generar una alternativa de cada publicación. Las campañas y referencias manuales se guardan en Vercel Blob privado con un código del equipo y control de revisiones; el navegador conserva un respaldo. Preferencias avanzadas opcionales, estados y configuración en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md). La aprobación no publica en redes.
