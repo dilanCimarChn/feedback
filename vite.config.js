@@ -9,7 +9,7 @@ import { statSync } from 'node:fs';
 dotenv.config();
 
 // Funciones serverless disponibles en /api (mismo nombre que el archivo)
-const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'plan-marketing', 'plan-automatico', 'senales-sociales'];
+const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'plan-marketing', 'plan-automatico', 'senales-sociales', 'campanas', 'regenerar-publicacion'];
 
 export default defineConfig({
   plugins: [

@@ -81,6 +81,8 @@ test('plan automático investiga fuentes, respeta marca y calcula base horaria s
     const exacto=await invocar({...entrada,cantidadPublicaciones:2,totalPublicaciones:2,finCampana:entrada.fin,region:'La Paz'});
     assert.equal(exacto.code,200);assert.equal(exacto.data.publicaciones.length,2);
     assert.equal(contexto.region,'La Paz');assert.equal(exacto.data.region,'La Paz');
+    const personalizado=await invocar({...entrada,redes:['Instagram'],cantidadPublicaciones:2,totalPublicaciones:2,finCampana:entrada.fin,objetivo:'Captar voluntarios',publico:'Estudiantes',productos:'Talleres gratuitos',tono:'Didáctico',presupuesto:'Sin pauta',fechasImportantes:'2026-12-05 | Jornada del equipo',referencias:[{plataforma:'Facebook',titulo:'Actividad del barrio',url:'https://www.facebook.com/reference/posts/1'}]});
+    assert.equal(personalizado.code,200);assert.ok(personalizado.data.publicaciones.every(p=>p.red==='Instagram'&&p.id&&p.estado==='borrador'&&p.objetivo==='Captar voluntarios'&&p.publico_objetivo==='Estudiantes'));assert.equal(contexto.productos,'Talleres gratuitos');assert.equal(contexto.marca.tono,'Didáctico');assert.ok(personalizado.data.eventos.some(e=>e.nombre==='Jornada del equipo'));assert.ok(contexto.catalogoFuentes.some(f=>f.url==='https://www.facebook.com/reference/posts/1'));
     const antesLotes=llamadasIA;
     const seis=await invocar({...entrada,cantidadPublicaciones:6,totalPublicaciones:6,finCampana:entrada.fin});
     assert.equal(seis.code,200);assert.equal(seis.data.publicaciones.length,6);

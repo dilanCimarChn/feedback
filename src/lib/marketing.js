@@ -1,5 +1,6 @@
 export const REDES = ['Facebook', 'Instagram', 'TikTok', 'X', 'LinkedIn', 'YouTube'];
 export const FORMATOS_MARKETING = ['Reel', 'Clip', 'Carrusel', 'Imagen', 'Historia', 'Texto'];
+export const FORMATOS_POR_RED={Facebook:['Reel','Carrusel','Imagen','Historia'],Instagram:['Reel','Carrusel','Imagen','Historia'],TikTok:['Clip'],YouTube:['Clip'],LinkedIn:['Clip','Carrusel','Imagen'],X:['Texto','Imagen','Clip']};
 export const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export function rangoCampana(inicio, cantidad, unidad) {
@@ -99,7 +100,7 @@ export function descargarArchivo(nombre, contenido, tipo = 'text/plain;charset=u
 }
 
 export function calendarioCsv(plan) {
-  const campos = ['campana', 'mensaje', 'proposito', 'publico_objetivo', 'url_cta', 'fecha', 'hora', 'red', 'formato', 'pilar', 'titulo', 'gancho', 'guion', 'copy', 'hashtags', 'palabras_clave', 'cta', 'metrica', 'motivo', 'base_horario', 'visual', 'distribucion'];
+  const campos = ['campana', 'estado', 'objetivo', 'mensaje', 'proposito', 'publico_objetivo', 'url_cta', 'fecha', 'hora', 'red', 'formato', 'pilar', 'titulo', 'gancho', 'guion', 'copy', 'hashtags', 'palabras_clave', 'cta', 'metrica', 'motivo', 'base_horario', 'visual', 'distribucion'];
   const celda = v => {
     let s = Array.isArray(v) ? v.join(' ') : String(v ?? '');
     if (/^[\s]*[=+@-]/.test(s)) s = `'${s}`;

@@ -21,13 +21,14 @@ function fechaValida(fecha) {
     Number.isFinite(Date.parse(fecha)) && new Date(fecha).toISOString().slice(0, 10) === fecha;
 }
 
-function cuotas(total, diasConPublicaciones) {
-  const cantidades = REDES.map((_, i) => i < total ? 1 : 0);
-  for (let n = Math.min(total, REDES.length); n < total; n++) {
+function cuotas(total, diasConPublicaciones, redes) {
+  const cantidades = redes.map((_, i) => i < total ? 1 : 0);
+  const pesos=redes.map(r=>PESOS[REDES.indexOf(r)]);
+  for (let n = Math.min(total, redes.length); n < total; n++) {
     let elegida = -1;
-    for (let i = 0; i < REDES.length; i++) {
+    for (let i = 0; i < redes.length; i++) {
       if (cantidades[i] >= diasConPublicaciones) continue;
-      if (elegida < 0 || PESOS[i] / (cantidades[i] + 1) > PESOS[elegida] / (cantidades[elegida] + 1)) elegida = i;
+      if (elegida < 0 || pesos[i] / (cantidades[i] + 1) > pesos[elegida] / (cantidades[elegida] + 1)) elegida = i;
     }
     if (elegida < 0) throw new Error('No hay suficientes días para esa cantidad de publicaciones.');
     cantidades[elegida]++;
@@ -40,18 +41,18 @@ function cuotas(total, diasConPublicaciones) {
 function cabenCuotas(restantes, limites) {
   const ordenadas = [...restantes].sort((a, b) => b - a);
   let acumulado = 0;
-  for (let k = 1; k <= REDES.length; k++) {
+  for (let k = 1; k <= restantes.length; k++) {
     acumulado += ordenadas[k - 1];
     if (acumulado > limites[k]) return false;
   }
   return true;
 }
 
-function distribuirRedes(fechas, cantidades, total) {
+function distribuirRedes(fechas, cantidades, total, redes) {
   let restantes = [...cantidades], procesadas = 0;
   // Para cada sufijo de fechas, capacidad disponible para cualquier grupo de k redes.
   const limites = Array(fechas.length + 1);
-  limites[fechas.length] = Array(REDES.length + 1).fill(0);
+  limites[fechas.length] = Array(redes.length + 1).fill(0);
   for (let d = fechas.length - 1; d >= 0; d--) {
     limites[d] = limites[d + 1].map((limite, k) => limite + Math.min(k, fechas[d].cantidad));
   }
@@ -59,8 +60,8 @@ function distribuirRedes(fechas, cantidades, total) {
     const dia = fechas[d], avance = procesadas + dia.cantidad;
     let mejor = null, mejorPuntaje = -Infinity;
     // Seis redes implican como máximo 20 combinaciones del tamaño requerido.
-    for (let mascara = 1; mascara < 1 << REDES.length; mascara++) {
-      const indices = REDES.map((_, i) => i).filter(i => mascara & (1 << i));
+    for (let mascara = 1; mascara < 1 << redes.length; mascara++) {
+      const indices = redes.map((_, i) => i).filter(i => mascara & (1 << i));
       if (indices.length !== dia.cantidad || indices.some(i => restantes[i] === 0)) continue;
       const despues = restantes.map((n, i) => n - (indices.includes(i) ? 1 : 0));
       if (!cabenCuotas(despues, limites[d + 1])) continue;
@@ -69,20 +70,20 @@ function distribuirRedes(fechas, cantidades, total) {
       const puntaje = indices.reduce((suma, i) => {
         const publicadas = cantidades[i] - restantes[i];
         const deficit = avance * cantidades[i] / total - publicadas;
-        const arranque = procesadas < Math.min(total, REDES.length) && publicadas === 0 ? 1000 - i : 0;
+        const arranque = procesadas < Math.min(total, redes.length) && publicadas === 0 ? 1000 - i : 0;
         return suma + deficit + arranque;
       }, 0);
       if (puntaje > mejorPuntaje) { mejor = indices; mejorPuntaje = puntaje; }
     }
     if (!mejor) throw new Error('No se pudo distribuir la agenda sin repetir una red el mismo día.');
-    dia.redes = mejor.map(i => { restantes[i]--; return REDES[i]; });
+    dia.redes = mejor.map(i => { restantes[i]--; return redes[i]; });
     procesadas = avance;
   }
 }
 
 /** Una agenda global permite continuar bloques sin cambiar las cuotas del mes. */
 export function crearAgenda({ inicio, fin, origen = inicio, finCampana = fin,
-  cantidadPublicaciones, totalPublicaciones, metricas = [], zona = 'UTC' }) {
+  cantidadPublicaciones, totalPublicaciones, metricas = [], zona = 'UTC', redes = REDES }) {
   if (![inicio, fin, origen, finCampana].every(fechaValida) || origen > inicio || inicio > fin || fin > finCampana) {
     throw new Error('El rango de la agenda no es válido.');
   }
@@ -90,12 +91,14 @@ export function crearAgenda({ inicio, fin, origen = inicio, finCampana = fin,
   let diasCampana = (Date.parse(finCampana) - Date.parse(origen)) / DIA + 1;
   if (dias < 1 || dias > 31 || diasCampana > 366) throw new Error('La agenda admite bloques de hasta 31 días y campañas de hasta un año.');
   new Intl.DateTimeFormat('es', { timeZone: zona }).format();
+  if(!Array.isArray(redes)||!redes.length||redes.some(r=>!REDES.includes(r))||new Set(redes).size!==redes.length)throw new Error('Selecciona al menos una plataforma válida.');
+  redes=REDES.filter(r=>redes.includes(r));
   // Una petición sin cuota global corresponde a un bloque independiente.
   if (totalPublicaciones === undefined) {
     origen = inicio; finCampana = fin; diasCampana = dias;
     totalPublicaciones = cantidadPublicaciones ?? Math.max(1, Math.round(dias * 5 / 7));
   }
-  if (!Number.isInteger(totalPublicaciones) || totalPublicaciones < 0 || totalPublicaciones > 366 || totalPublicaciones > diasCampana * REDES.length) {
+  if (!Number.isInteger(totalPublicaciones) || totalPublicaciones < 0 || totalPublicaciones > 366 || totalPublicaciones > diasCampana * redes.length) {
     throw new Error('La cantidad total de publicaciones no es válida para este período.');
   }
   const desde = (Date.parse(inicio) - Date.parse(origen)) / DIA;
@@ -103,7 +106,7 @@ export function crearAgenda({ inicio, fin, origen = inicio, finCampana = fin,
   if (cantidadPublicaciones !== undefined && (!Number.isInteger(cantidadPublicaciones) || cantidadPublicaciones < 0 || cantidadPublicaciones > 120 || cantidadPublicaciones !== esperadas)) {
     throw new Error('La cantidad del bloque no coincide con la distribución de la campaña.');
   }
-  if (esperadas > 120 || esperadas > dias * REDES.length) throw new Error('Reduce la cantidad de publicaciones de este bloque.');
+  if (esperadas > 120 || esperadas > dias * redes.length) throw new Error('Reduce la cantidad de publicaciones de este bloque.');
   if (!totalPublicaciones || !esperadas) return [];
 
   const fechas = Array.from({ length: diasCampana }, (_, i) => ({
@@ -111,7 +114,7 @@ export function crearAgenda({ inicio, fin, origen = inicio, finCampana = fin,
     cantidad: Math.round(totalPublicaciones * (i + 1) / diasCampana) - Math.round(totalPublicaciones * i / diasCampana),
     redes: []
   })).filter(d => d.cantidad);
-  distribuirRedes(fechas, cuotas(totalPublicaciones, fechas.length), totalPublicaciones);
+  distribuirRedes(fechas, cuotas(totalPublicaciones, fechas.length,redes), totalPublicaciones,redes);
   const resumen = resumirHistorico(metricas, inicio);
   const ocurrencias = Object.fromEntries(REDES.map(red => [red, 0]));
   const agenda = [];

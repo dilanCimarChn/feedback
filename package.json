@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/blob": "^2.9.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -18,5 +19,8 @@
     "@vitejs/plugin-react": "^4.3.4",
     "dotenv": "^16.4.7",
     "vite": "^6.2.0"
+  },
+  "overrides": {
+    "@vercel/oidc": "^4.0.9"
   }
 }

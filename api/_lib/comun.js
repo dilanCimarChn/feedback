@@ -15,7 +15,7 @@ const MODELOS = [
 ].filter(Boolean);
 
 // Obtener API key con fallback de lectura directa del archivo .env en caliente
-function getApiKey() {
+export function getApiKey() {
   if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
     return process.env.GEMINI_API_KEY.trim();
   }
