@@ -176,6 +176,10 @@ export default function App() {
           onCancelar={() => responderCodigo(null)}
         />
       )}
+      <footer className="pie-informativo" aria-label="Enlaces informativos">
+        <a href="/privacidad">Política de privacidad</a>
+        <a href="/eliminacion-de-datos">Eliminación de datos</a>
+      </footer>
     </div>
   );
 }

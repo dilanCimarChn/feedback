@@ -12,6 +12,15 @@ cargarEntornoLocal();
 const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'metricas-propias', 'plan-marketing', 'plan-automatico', 'senales-sociales', 'campanas', 'regenerar-publicacion'];
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        principal: resolve('index.html'),
+        privacidad: resolve('privacidad.html'),
+        eliminacion: resolve('eliminacion-de-datos.html')
+      }
+    }
+  },
   server: { fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/.data.local/**'] } },
   plugins: [
     react(),
