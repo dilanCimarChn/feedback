@@ -38,8 +38,8 @@ export async function consultarFacebookExterno() {
   const ids=lista(process.env.FACEBOOK_DISCOVERY_PAGE_IDS).filter(id=>/^\d{1,30}$/.test(id)&&id!==process.env.FACEBOOK_PAGE_ID).slice(0,3);
   const token=process.env.FACEBOOK_PUBLIC_ACCESS_TOKEN?.trim(),version=process.env.META_GRAPH_VERSION?.trim();
   const base={fuente:'Facebook',modo:'descubrimiento_externo',url:DOC_FACEBOOK,consultado:new Date().toISOString(),items:[],alcance:'Hasta tres páginas públicas de referencia con acceso autorizado. No es búsqueda global ni acredita la ubicación de su audiencia.'};
-  if(!ids.length||!token)return {...base,estado:'Sin configurar',detalle:'Pendiente de páginas de referencia y un acceso público aprobado para este uso. El token de tu página no se utiliza como sustituto; puedes agregar enlaces manuales.'};
-  if(!/^v\d+\.\d+$/.test(version||''))return {...base,estado:'No disponible',detalle:'Configura una versión soportada de Meta Graph API.'};
+  if(!ids.length||!token)return {...base,estado:'Pendiente de acceso a páginas públicas',detalle:'Pendiente de páginas de referencia y un acceso público aprobado para este uso. El token de tu página no se utiliza como sustituto; puedes agregar enlaces manuales.'};
+  if(!/^v\d+\.\d+$/.test(version||''))return {...base,estado:'Pendiente de acceso a páginas públicas',detalle:'Configura una versión soportada de Meta Graph API.'};
   return cache(huella(['facebook-publico',ids,token,version]),async()=>{
     const respuestas=await Promise.allSettled(ids.map(async id=>{
       const params=new URLSearchParams({fields:'id,message,created_time,permalink_url,shares',limit:'10'});
@@ -55,6 +55,6 @@ export async function consultarFacebookExterno() {
     }));
     const items=[...new Map(respuestas.flatMap(r=>r.status==='fulfilled'?r.value:[]).map(p=>[p.url,p])).values()];
     const fallos=respuestas.filter(r=>r.status==='rejected');
-    return {...base,consultado:new Date().toISOString(),items,estado:items.length?'Consultada':fallos.length===respuestas.length?'No disponible':'Sin resultados',parcial:fallos.length>0&&fallos.length<respuestas.length,avisos:fallos.map(r=>r.reason.message),detalle:fallos.length?fallos[0].reason.message:'Lectura pública de las páginas de referencia completada; no se verificó tendencia, crecimiento ni rendimiento.'};
-  },r=>r.estado==='No disponible'||r.parcial?15000:900000);
+    return {...base,consultado:new Date().toISOString(),items,estado:items.length?'Consultada':'Pendiente de acceso a páginas públicas',parcial:fallos.length>0&&fallos.length<respuestas.length,avisos:fallos.map(r=>r.reason.message),detalle:fallos.length?fallos[0].reason.message:'Lectura pública de las páginas de referencia completada; no se verificó tendencia, crecimiento ni rendimiento.'};
+  },r=>r.estado!=='Consultada'||r.parcial?15000:900000);
 }

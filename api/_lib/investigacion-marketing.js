@@ -1,7 +1,6 @@
 import { obtenerSenales } from './senales-sociales.js';
-import { consultarPlataformas } from './plataformas-sociales.js';
 import { consultarInstagramExterno } from './instagram-descubrimiento.js';
-import { consultarTikTokDiscovery,consultarFacebookExterno } from './descubrimiento-social.js';
+import { consultarFacebookExterno } from './descubrimiento-social.js';
 import { normalizarRadar } from '../../src/lib/radar.js';
 import { crearCacheAsync, huella, limitarFuentes } from './carga.js';
 
@@ -101,7 +100,7 @@ export async function investigarMarketing(pais, tema, region = '', opciones = {}
   const dias=opciones.dias??7,idioma=opciones.idioma||'';
   if(!Number.isInteger(dias)||dias<1||dias>30||typeof idioma!=='string'||(idioma&&!/^[a-z]{2}(?:-[A-Za-z]{2,4})?$/.test(idioma)))throw new Error('Periodo o idioma no válido.');
   const separadas=valor=>String(valor||'').split(',').map(s=>s.trim()).filter(Boolean).slice(0,2);
-  const seleccion={dias,idioma,hashtags:Array.isArray(opciones.hashtags)?opciones.hashtags.slice(0,2):separadas(process.env.INSTAGRAM_DISCOVERY_HASHTAGS),cuentas:Array.isArray(opciones.cuentas)?opciones.cuentas.slice(0,2):separadas(process.env.INSTAGRAM_DISCOVERY_ACCOUNTS||process.env.INSTAGRAM_CUENTAS_REFERENCIA)};
+  const seleccion={dias,idioma,orden:opciones.orden||'relevance',palabrasClave:opciones.palabrasClave||'',canalId:opciones.canalId||'',hashtags:Array.isArray(opciones.hashtags)?opciones.hashtags.slice(0,2):separadas(process.env.INSTAGRAM_DISCOVERY_HASHTAGS),cuentas:Array.isArray(opciones.cuentas)?opciones.cuentas.slice(0,2):separadas(process.env.INSTAGRAM_DISCOVERY_ACCOUNTS||process.env.INSTAGRAM_CUENTAS_REFERENCIA)};
   const configuracion = Object.entries(process.env).filter(([k]) => /^(YOUTUBE_|META_|FACEBOOK_|INSTAGRAM_|TIKTOK_|X_BEARER_|LINKEDIN_)/.test(k)).sort(([a],[b]) => a.localeCompare(b));
   return cache(`${pais}:${tema}:${normalizar(region)}:${huella([configuracion,seleccion])}`, () => investigar(pais, tema, region,seleccion), data => data.estados.some(s => s.estado === 'No disponible') ? 15000 : 900000);
 }
@@ -124,16 +123,14 @@ async function investigar(pais, tema, region,opciones) {
   };
   const tareas = await Promise.allSettled([
     cacheRss(pais, () => descargar(rss,'text').then(leerTendenciasRss)),
-    obtenerSenales(pais,consultaYouTube(pais,tema,region),{dias:opciones.dias,idioma:opciones.idioma}),
+    obtenerSenales(pais,consultaYouTube(pais,tema,region),{dias:opciones.dias,idioma:opciones.idioma,orden:opciones.orden,palabrasClave:opciones.palabrasClave,canalId:opciones.canalId}),
     tema.length >= 2 ? buscarNoticias() : Promise.resolve({noticias:[],consulta:query,nivel:'Sin tema específico'}),
-    consultarPlataformas(tema),
     consultarInstagramExterno({tema,pais,region,hashtags:opciones.hashtags,cuentas:opciones.cuentas}),
-    consultarTikTokDiscovery({tema,pais}),
+    Promise.resolve({fuente:'TikTok',modo:'descubrimiento_externo',estado:'Pendiente',items:[],consultado:new Date().toISOString(),detalle:'Integración pendiente; no se consultan cuentas propias ni Discovery para el radar.'}),
     consultarFacebookExterno()
   ]);
-  const plataformas=tareas[3].status==='fulfilled'?tareas[3].value.map(p=>({...p,items:marcarPertinencia(p.items,tema,'titulo')})):[];
-  const descubrimiento=tareas[4].status==='fulfilled'?tareas[4].value:{fuente:'Instagram',modo:'descubrimiento_externo',estado:'No disponible',items:[],consultado:new Date().toISOString(),url:'https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-facebook-login/hashtag-search',alcance:'Contenido público autorizado por hashtags o cuentas profesionales; no es un ranking global.',detalle:'No se pudo consultar el descubrimiento externo de Instagram.'};
-  const descubrimientos=[descubrimiento,...tareas.slice(5,7).map((r,i)=>r.status==='fulfilled'?r.value:{fuente:i?'Facebook':'TikTok',modo:'descubrimiento_externo',estado:'No disponible',items:[],detalle:'El proveedor de descubrimiento no está disponible.',consultado:new Date().toISOString()})];
+  const descubrimiento=tareas[3].status==='fulfilled'?tareas[3].value:{fuente:'Instagram',modo:'descubrimiento_externo',estado:'No disponible',items:[],consultado:new Date().toISOString(),url:'https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-facebook-login/hashtag-search',alcance:'Contenido público autorizado por hashtags o cuentas profesionales; no es un ranking global.',detalle:'No se pudo consultar el descubrimiento externo de Instagram.'};
+  const descubrimientos=[descubrimiento,...tareas.slice(4,6).map((r,i)=>r.status==='fulfilled'?r.value:{fuente:i?'Facebook':'TikTok',modo:'descubrimiento_externo',estado:'No disponible',items:[],detalle:'El proveedor de descubrimiento no está disponible.',consultado:new Date().toISOString()})];
   for(const fuente of descubrimientos)fuente.items=marcarPertinencia(fuente.items||[],tema,'titulo');
   const estados = tareas.slice(0,3).map((r,i) => {
     const consultada=r.status==='fulfilled';
@@ -142,17 +139,17 @@ async function investigar(pais, tema, region,opciones) {
     const detalle=i===1?(consultada?r.value.aviso:r.reason?.message||'No se pudo consultar YouTube.'):i===2&&consultada?`${r.value.nivel}. Consulta: ${r.value.consulta}. Son menciones geográficas en noticias, no actividad de usuarios.`:i===2?'GDELT no respondió o devolvió datos no válidos. Las demás fuentes y el calendario siguen disponibles.':i===0?'Búsquedas generales del país, sin filtro por ciudad ni sector. Solo se vinculan como referencia las coincidencias temáticas.':'';
     return {fuente:['Google Trends','YouTube','GDELT'][i],estado,detalle,url:[rss,'https://developers.google.com/youtube/data/reference/rest/v3/videos/list','https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/'][i]};
   });
-  estados.push(...plataformas.map(({items,...estado})=>{const externa=descubrimientos.find(f=>f.fuente===estado.fuente);return externa?{...externa,items:undefined,estadoCuenta:estado.estado,detalleCuenta:estado.detalle}:estado;}));
+  estados.push(...descubrimientos.map(({items,...estado})=>estado),{fuente:'X',estado:'No habilitada',detalle:'Excluida: solo se utilizan fuentes gratuitas.'},{fuente:'LinkedIn',estado:'Sin fuente externa',detalle:'La lectura de la organización pertenece a Métricas propias; no se utiliza como tendencia competitiva.'});
   const youtube=tareas[1].status==='fulfilled'?Object.fromEntries(Object.entries(tareas[1].value).filter(([k])=>k!=='videos')):{modo:tema?'busqueda_tematica':'seleccion_popular',conectado:false,consulta:consultaYouTube(pais,tema,region),aviso:tareas[1].reason?.message||'YouTube no disponible.'};
   const data = {consultado:new Date().toISOString(),pais,tema,region,prioridadRedes:PRIORIDAD_REDES,estados,tendencias:marcarPertinencia(tareas[0].status === 'fulfilled' ? tareas[0].value : [],tema,'tema'), videos:marcarPertinencia(tareas[1].status === 'fulfilled' ? tareas[1].value.videos.map(v=>({...v,consultado:tareas[1].value.consultado})) : [],tema,'titulo'), noticias:tareas[2].status === 'fulfilled' ? tareas[2].value.noticias : []};
-  data.plataformas=plataformas;
+  data.plataformas=[];
   data.youtube=youtube;
   data.descubrimiento=descubrimiento;
   data.descubrimientos=descubrimientos;
   data.periodoDias=opciones.dias;
   data.alcanceGeografico={pais,regionSolicitada:region || null,noticias:tareas[2].status === 'fulfilled' ? tareas[2].value.nivel : 'Sin datos disponibles',consultaNoticias:tareas[2].status === 'fulfilled' ? tareas[2].value.consulta : query,redes:'Las cuentas autorizadas e Instagram Hashtag Search no verifican geolocalización de audiencia. YouTube filtra disponibilidad de reproducción y busca menciones del lugar; Google Trends usa país. No equivalen a audiencia local.'};
-  data.hashtagsObservados=hashtagsObservados([...descubrimientos,...plataformas],data.videos,data.consultado);
-  data.limites=`YouTube busca videos públicos por tema de los últimos ${opciones.dias} días; sin tema consulta una selección popular actual. Instagram consulta hashtags y cuentas profesionales externas cuando los permisos lo permiten; recent_media cubre 24 horas, no un histórico configurable. TikTok Discovery aporta términos actuales no personalizados solo con discovery.search.words y acceso de cuenta aprobado; no filtra región o período en esa ruta. Facebook requiere páginas de referencia con acceso público autorizado. Las publicaciones propias se muestran aparte. X está excluida para evitar consumo de pago. Google Trends y GDELT complementan el tema. Ninguna consulta mide personas conectadas ni horas pico; una observación no prueba crecimiento. Las categorías del radar son sugerencias editoriales si el proveedor no las devuelve.`;
+  data.hashtagsObservados=hashtagsObservados(descubrimientos,data.videos,data.consultado);
+  data.limites=`YouTube busca videos públicos por tema de los últimos ${opciones.dias} días; sin tema consulta una selección popular actual. Instagram consulta hashtags y cuentas profesionales externas cuando los permisos lo permiten; recent_media cubre 24 horas, no un histórico configurable. TikTok permanece pendiente y no se consulta en el radar. Facebook requiere páginas de referencia con acceso público autorizado. Las publicaciones propias se muestran aparte. X está excluida para evitar consumo de pago. Google Trends y GDELT complementan el tema. Ninguna consulta mide personas conectadas ni horas pico; una observación no prueba crecimiento. Las categorías del radar son sugerencias editoriales si el proveedor no las devuelve.`;
   data.resultados=normalizarRadar(data);
   return data;
 }
