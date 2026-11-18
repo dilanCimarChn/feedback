@@ -1,4 +1,4 @@
-import {get,put,BlobPreconditionFailedError} from '@vercel/blob';
+import {get,head,put,BlobPreconditionFailedError} from '@vercel/blob';
 import {prepararCampana,referenciaManual,idValido} from '../../src/lib/campanas.js';
 import {timingSafeEqual} from 'node:crypto';
 
@@ -16,13 +16,28 @@ export function validarAccesoEquipo(req,res) {
 }
 export const almacenamientoDisponible=()=>Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim()||(process.env.BLOB_STORE_ID&&process.env.VERCEL_OIDC_TOKEN));
 const opciones=()=>({access:'private',...(process.env.BLOB_READ_WRITE_TOKEN?{token:process.env.BLOB_READ_WRITE_TOKEN}:{})});
-export const almacenBlob={
-  async leer(){const r=await get(RUTA,{...opciones(),useCache:false,abortSignal:AbortSignal.timeout(12000)});if(!r)return {datos:{campanas:{},referencias:[]},etag:null};return {datos:await new Response(r.stream).json(),etag:r.blob.etag};},
+export function crearAlmacenBlob({leerBlob=get,leerMetadata=head,escribirBlob=put}={}){return {
+  async leer(){
+    const r=await leerBlob(RUTA,{...opciones(),useCache:false,abortSignal:AbortSignal.timeout(12000)});
+    if(!r)return {datos:{campanas:{},referencias:[]},etag:null};
+    const datos=await new Response(r.stream).json();let etag=r.blob.etag;
+    // La entrega comprimida puede devolver W/"hash"; If-Match exige el ETag
+    // fuerte de metadata. Comprobar ambas versiones antes de usarlo evita
+    // asociar contenido antiguo con el ETag de una escritura concurrente.
+    if(etag?.startsWith('W/')){
+      const metadata=await leerMetadata(RUTA,{...opciones(),abortSignal:AbortSignal.timeout(12000)});
+      if(etag.slice(2)!==metadata.etag)throw new ErrorCampana('El documento cambió durante la lectura. Intenta guardar nuevamente.',409);
+      etag=metadata.etag;
+    }
+    if(!etag)throw new ErrorCampana('No se pudo comprobar la versión del documento. Los cambios locales se conservan.',503);
+    return {datos,etag};
+  },
   async escribir(datos,etag){
-    try {return await put(RUTA,JSON.stringify(datos),{...opciones(),contentType:'application/json',addRandomSuffix:false,allowOverwrite:Boolean(etag),...(etag?{ifMatch:etag}:{}),abortSignal:AbortSignal.timeout(12000)});}
+    try {return await escribirBlob(RUTA,JSON.stringify(datos),{...opciones(),contentType:'application/json',addRandomSuffix:false,allowOverwrite:Boolean(etag),...(etag?{ifMatch:etag}:{}),abortSignal:AbortSignal.timeout(12000)});}
     catch(e){if(e instanceof BlobPreconditionFailedError||/already exists|precondition/i.test(e.message||''))throw new ErrorCampana('Otra persona guardó cambios al mismo tiempo.',409);throw e;}
   }
-};
+};}
+export const almacenBlob=crearAlmacenBlob();
 export function crearRepositorioCampanas(almacen=almacenBlob) {
   async function ejecutar(b) {
     if(!['listar','abrir','guardar','referencia'].includes(b.accion))throw new ErrorCampana('Acción de campañas no válida.');
@@ -31,7 +46,9 @@ export function crearRepositorioCampanas(almacen=almacenBlob) {
     catch(e){throw new ErrorCampana(e.message);}
     if(plan&&(!Number.isInteger(b.revision)||b.revision<0))throw new ErrorCampana('Falta la versión de la campaña.');
     for(let intento=0;intento<3;intento++) {
-      const {datos,etag}=await almacen.leer();
+      let lectura;
+      try{lectura=await almacen.leer();}catch(e){if(e.status===409&&intento<2)continue;throw e;}
+      const {datos,etag}=lectura;
       datos.campanas||={};datos.referencias||=[];
       if(b.accion==='listar')return {campanas:Object.values(datos.campanas).map(c=>({id:c.plan.id,nombre:c.plan.nombre,inicio:c.plan.inicio,fin:c.plan.fin,publicaciones:c.plan.publicaciones.length,revision:c.revision,actualizado:c.actualizado})).sort((a,b)=>b.actualizado.localeCompare(a.actualizado)),referencias:datos.referencias};
       if(b.accion==='abrir') {

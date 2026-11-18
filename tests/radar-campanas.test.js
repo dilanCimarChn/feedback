@@ -3,13 +3,20 @@ import assert from 'node:assert/strict';
 import {normalizarRadar,filtrarRadar,urlReferencia,fechaRadar} from '../src/lib/radar.js';
 import {prepararCampana,editarPublicacion,aplicarPropuesta,referenciaManual,referenciaSeleccionada,fechasDelEquipo} from '../src/lib/campanas.js';
 import {crearAgenda} from '../api/_lib/agenda-marketing.js';
-import {crearRepositorioCampanas,validarAccesoEquipo,ErrorCampana,repositorioCampanas} from '../api/_lib/campanas-equipo.js';
+import {crearAlmacenBlob,crearRepositorioCampanas,validarAccesoEquipo,ErrorCampana,repositorioCampanas} from '../api/_lib/campanas-equipo.js';
 import handler from '../api/campanas.js';
 import regenerar from '../api/regenerar-publicacion.js';
 
 const nueva=()=>({id:crypto.randomUUID(),nombre:'Campaña del equipo',inicio:'2026-11-17',fin:'2026-11-23',zona:'America/New_York',bloques:[],publicaciones:[{id:crypto.randomUUID(),fecha:'2026-11-18',hora:'12:00',red:'Facebook',formato:'Reel',titulo:'Educación accesible',copy:'Participa en el taller.',estado:'aprobado',hashtags:[],referencias:[]}]});
 function memoria(){let datos={campanas:{},referencias:[]},version=0;return {async leer(){await Promise.resolve();return {datos:structuredClone(datos),etag:version||null};},async escribir(d,etag){await Promise.resolve();if((version||null)!==etag)throw new ErrorCampana('Conflicto',409);datos=structuredClone(d);version++;}};}
 const res=()=>({status(c){this.code=c;return this;},json(d){this.data=d;return this;},setHeader(k,v){this[k]=v;}});
+
+test('Blob usa el ETag fuerte para actualizar después de una lectura comprimida y detecta cambios entre contenido y metadata',async()=>{
+  const datos={campanas:{},referencias:[]};let actual='"abc"',escrituras=0;
+  const almacen=crearAlmacenBlob({leerBlob:async()=>({stream:new Response(JSON.stringify(datos)).body,blob:{etag:'W/"abc"'}}),leerMetadata:async()=>({etag:actual}),escribirBlob:async(ruta,cuerpo,opciones)=>{escrituras++;assert.equal(opciones.ifMatch,'"abc"');assert.equal(opciones.allowOverwrite,true);assert.equal(opciones.access,'private');return {etag:'"nuevo"'};}});
+  const r=await almacen.leer();assert.equal(r.etag,'"abc"');await almacen.escribir(r.datos,r.etag);assert.equal(escrituras,1);
+  actual='"otra-version"';await assert.rejects(almacen.leer(),e=>e.status===409);assert.equal(escrituras,1,'nunca escribe contenido antiguo con el ETag de una versión nueva');
+});
 
 test('el radar separa métricas propias, fechas desconocidas y referencias manuales sin inventar crecimiento o geolocalización',()=>{
   const datos={pais:'US',tema:'educación',consultado:'2026-11-17T12:00:00Z',youtube:{modo:'busqueda_tematica',alcance:'Primera página, sin ranking.'},videos:[{titulo:'Education',url:'https://youtube.com/watch?v=abcdefghijk',publicado:'2026-11-15T12:00:00Z',vistas:'12'}],noticias:[{titulo:'Escuela',url:'https://example.com/escuela',fecha:'20261116T120000Z',idioma:'English'}],referenciasManuales:[{titulo:'Voluntariado',url:'https://facebook.com/1',plataforma:'Facebook'}],plataformas:[{fuente:'Instagram',items:[{titulo:'Propia',url:'https://instagram.com/p/propia/'}]}]};
