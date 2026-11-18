@@ -26,12 +26,11 @@ test('hashtags observados tienen red y enlace, conservan prioridad y no inventan
   assert.ok(!resultado.some(h=>'volumen' in h));
 });
 
-test('el catálogo excluye señales ajenas al tema y conserva hashtags y alcance de cuentas', () => {
+test('el catálogo excluye señales ajenas al tema y excluye el contenido de cuentas propias', () => {
   const catalogo=catalogarFuentes({pais:'US',consultado:'2026-11-16',tendencias:[{tema:'Evento deportivo',url:'https://example.org/deporte',pertinente:false},{tema:'Education',url:'https://example.org/education',pertinente:true}],videos:[{titulo:'Canción',pertinente:false}],plataformas:[{fuente:'Facebook',alcance:'Cuenta autorizada',items:[{titulo:'Comunidad #Education',url:'https://example.org/fb',hashtags:['#Education']}]}]});
-  assert.equal(catalogo.length,2);
+  assert.equal(catalogo.length,1);
   assert.equal(catalogo[0].titulo,'Education');
-  assert.deepEqual(catalogo[1].observaciones.hashtagsObservados,['#Education']);
-  assert.equal(catalogo[1].observaciones.alcance,'Cuenta autorizada');
+  assert.ok(!catalogo.some(f=>f.tipo==='Cuenta autorizada'));
 });
 
 test('investigación amplía localidad sin resultados al país y separa cachés por localidad', async () => {
@@ -61,7 +60,7 @@ test('investigación amplía localidad sin resultados al país y separa cachés 
     const segundo=await investigarMarketing('US','ONG de educación en EEUU captar donantes geographic test','Boston');
     assert.equal(queries.length,4,'Cambiar localidad no reutiliza noticias de otra ciudad');
     assert.equal(segundo.alcanceGeografico.regionSolicitada,'Boston');
-    assert.equal(segundo.estados.find(s=>s.fuente==='Facebook').estado,'Sin configurar');
+    assert.equal(segundo.estados.find(s=>s.fuente==='Facebook').estado,'Pendiente de acceso a páginas públicas');
   } finally {
     globalThis.fetch=originalFetch;
     Object.entries(previas).forEach(([k,v])=>{process.env[k]=v;});

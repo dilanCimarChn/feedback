@@ -134,7 +134,7 @@ export default function App() {
       </div>
       <div hidden={pantalla !== 'tendencias'}>
         {visitadas.includes('tendencias')&&<Suspense fallback={<p role="status">Cargando fuentes…</p>}>
-        <Tendencias perfil={perfil} onPlanificar={texto => { if (texto.trim()) setContextoMarketing({texto,id:Date.now()}); setPantalla('marketing'); }} onUsar={texto => { setBorrador({ texto, id: Date.now() }); setPantalla('revision'); setResultado(null); setError(null); }} />
+        <Tendencias perfil={perfil} onPlanificar={entrada => { const contexto=typeof entrada==='string'?{texto:entrada}:entrada; if (contexto?.texto?.trim()) setContextoMarketing({...contexto,id:Date.now()}); setPantalla('marketing'); }} onUsar={texto => { setBorrador({ texto, id: Date.now() }); setPantalla('revision'); setResultado(null); setError(null); }} />
         </Suspense>}
       </div>
       <main className="main-grid" hidden={pantalla !== 'revision'}>
@@ -176,6 +176,10 @@ export default function App() {
           onCancelar={() => responderCodigo(null)}
         />
       )}
+      <footer className="pie-informativo" aria-label="Enlaces informativos">
+        <a href="/privacidad">Política de privacidad</a>
+        <a href="/eliminacion-de-datos">Eliminación de datos</a>
+      </footer>
     </div>
   );
 }

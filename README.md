@@ -63,6 +63,15 @@ Sistema inteligente de control de calidad y auditoría de marca para publicacion
 
 ## Despliegue en Vercel
 
+Primer despliegue, registrado el 16 de noviembre de 2026:
+
+- Aplicación: [feedback-sigma-one.vercel.app](https://feedback-sigma-one.vercel.app).
+- Proyecto: [dilancimarchn-5758/feedback](https://vercel.com/dilancimarchn-5758/feedback), plan Hobby.
+- El primer despliegue usó la rama `dev`, commit `60071ac`, mediante Vercel CLI. La ampliación del radar y las campañas se publicó el 17 de noviembre; ver [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
+- `GEMINI_API_KEY` está configurada como secreto de producción. Las conexiones sociales siguen siendo opcionales. La ampliación del radar y del calendario se documenta en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
+- La publicación actual funciona sin vinculación Git. Para desplegar automáticamente futuros pushes, falta conectar GitHub a la cuenta de Vercel y vincular este repositorio.
+- `.env` y los archivos locales están excluidos mediante `.vercelignore`; los metadatos de `.vercel/` no se versionan.
+
 1. Importa el repositorio en [Vercel](https://vercel.com).
 2. En la sección **Environment Variables**, añade:
    - `GEMINI_API_KEY`: tu clave de API de Gemini.
@@ -75,10 +84,42 @@ Para obtener y configurar los accesos oficiales, consultar [CONFIGURAR_REDES.md]
 
 Prioriza las seis redes **Facebook, Instagram, TikTok, X (Twitter), LinkedIn y YouTube**, con conectores de lectura oficiales configurables en el servidor. Sin credenciales se muestra `Sin configurar`; no se inventan datos. Configuración y alcance de cada conexión en [REDES_SOCIALES.md](REDES_SOCIALES.md).
 
-La pestaña **Fuentes y tendencias** consulta `/api/tendencias`, que reúne Google Trends RSS, YouTube (si tiene clave) y noticias GDELT de los últimos 7 días. Cada fuente tiene estado propio: un fallo de GDELT no impide ver las tendencias disponibles ni continuar al calendario. El tema es opcional y orienta las noticias; las búsquedas y videos son señales generales del país, no un ranking del nicho.
+La pestaña **Fuentes y tendencias** consulta `/api/tendencias`, que reúne Google Trends RSS, YouTube (si tiene clave) y noticias GDELT de los últimos 7 días. Cada fuente tiene estado propio: un fallo de GDELT no impide ver las tendencias disponibles ni continuar al calendario. El tema orienta las noticias y la búsqueda de videos recientes de YouTube. La consulta permite 1–30 días y muestra el alcance real de Instagram, TikTok Discovery y Facebook externo según sus permisos; no es un ranking completo de ninguna red.
 
 Muestra las señales obtenidas, el momento de consulta y enlaces a las fuentes. No mide alcance, engagement ni mejores horarios de Instagram o TikTok. Las señales se pueden llevar al agente para evaluar su pertinencia y generar una campaña; no se presentan como garantía de rendimiento.
 
 La consulta es manual en esta pestaña y automática al generar un calendario. Hay caché en memoria de 15 minutos y no hay archivo persistente ni actualización con la aplicación cerrada. Este radar no incluye historial de cobertura. Si ninguna fuente responde, lo informa y permite continuar con una propuesta editorial inicial, sin inventar datos.
 
 Documentación del proveedor: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
+
+## Campañas compartidas
+
+El calendario permite editar, enviar a revisión, aprobar, descartar y generar una alternativa de cada publicación. Las campañas y referencias manuales se guardan en Vercel Blob privado con un código del equipo y control de revisiones; el navegador conserva un respaldo. Preferencias avanzadas opcionales, estados y configuración en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md). La aprobación no publica en redes.
+
+## Páginas públicas para Meta
+
+La app «Agente de Feedback» incorpora dos documentos HTML independientes:
+
+- Política de privacidad: `/privacidad`, desde `privacidad.html`.
+- Instrucciones de eliminación: `/eliminacion-de-datos`, desde `eliminacion-de-datos.html`.
+
+Vite compila ambas páginas junto con la aplicación. Las dos reescrituras específicas de `vercel.json` conservan esas rutas al abrirlas directamente o recargar. No se añade una ruta general que convierta cualquier URL en la pantalla principal. Las páginas incluyen todo el texto sin JavaScript, no montan la app ni llaman sus APIs y no exigen código de acceso. La aplicación enlaza a ambas en su pie.
+
+El contenido describe los datos comprobados en el código: marca, miniaturas, preferencias, calendarios e histórico opcional en almacenamiento del navegador; campañas, referencias y hallazgos compartidos en Blob privado o archivo de desarrollo; solicitudes de análisis a Gemini y consultas de lectura a proveedores públicos. La eliminación diferencia el borrado del navegador, la revocación en Facebook y la solicitud manual al proyecto en **cimardilan@gmail.com**. No hay borrado automático de campañas ni plazos fijos de retención configurados. Si cambia el tratamiento de datos, hay que actualizar estos textos.
+
+Para revisar la compilación antes del despliegue:
+
+```bash
+npm test
+npm run build
+npm run preview -- --host 127.0.0.1
+```
+
+Abrir `http://127.0.0.1:4173/privacidad` y `http://127.0.0.1:4173/eliminacion-de-datos` en una ventana privada y recargar. Cada ruta debe mostrar su título y contenido propio; los enlaces cruzados y el contacto deben funcionar. Las APIs conservan la comprobación de código que ya tenían cuando está configurado; las páginas informativas no la omiten para otras funciones.
+
+Después de desplegar esta versión, los enlaces para la configuración de Meta serán:
+
+- https://feedback-sigma-one.vercel.app/privacidad
+- https://feedback-sigma-one.vercel.app/eliminacion-de-datos
+
+La preparación de estas páginas no concede acceso a contenido público de Facebook: el radar sigue pendiente hasta obtener publicaciones reales de una página que no administremos. No se incorpora una devolución de llamada automática de borrado; la segunda URL contiene instrucciones públicas para presentar una solicitud.

@@ -1,17 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import dotenv from 'dotenv';
+import {cargarEntornoLocal} from './api/_lib/entorno.js';
 import { resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { statSync } from 'node:fs';
 
 // Cargar variables de entorno desde .env en desarrollo
-dotenv.config();
+cargarEntornoLocal();
 
 // Funciones serverless disponibles en /api (mismo nombre que el archivo)
-const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'plan-marketing', 'plan-automatico', 'senales-sociales'];
+const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'metricas-propias', 'plan-marketing', 'plan-automatico', 'senales-sociales', 'campanas', 'regenerar-publicacion'];
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        principal: resolve('index.html'),
+        privacidad: resolve('privacidad.html'),
+        eliminacion: resolve('eliminacion-de-datos.html')
+      }
+    }
+  },
+  server: { fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/.data.local/**'] } },
   plugins: [
     react(),
     {

@@ -1,3 +1,4 @@
+import { urlReferencia } from '../../src/lib/radar.js';
 import { resumirMetricas } from '../../src/lib/marketing.js';
 
 export function resumirHistorico(metricas, inicio, ahora = new Date()) {
@@ -17,13 +18,14 @@ export function resumirHistorico(metricas, inicio, ahora = new Date()) {
 export function catalogarFuentes(evidencia) {
   const catalogo = [];
   const agregar = (fuente, titulo, url, fecha, tipo, observaciones = {}) => {
-    if (!titulo || catalogo.length >= 60) return;
-    catalogo.push({ id: `F${catalogo.length + 1}`, fuente, titulo: String(titulo).slice(0, 300), url: /^https?:\/\//.test(url || '') ? url : '', fecha: fecha || null, tipo, observaciones });
+    if (!titulo || catalogo.length >= 60 || !urlReferencia(url)) return;
+    catalogo.push({ id: `F${catalogo.length + 1}`, fuente, titulo: String(titulo).slice(0, 300), url: urlReferencia(url), fecha: fecha || null, tipo, observaciones });
   };
   evidencia.noticias?.slice(0, 10).forEach(n => agregar('GDELT', n.titulo, n.url, n.fecha, 'Noticia', { alcanceGeografico: evidencia.alcanceGeografico?.noticias, consulta: evidencia.alcanceGeografico?.consultaNoticias }));
   evidencia.tendencias?.filter(t => t.pertinente !== false).slice(0, 15).forEach(t => agregar('Google Trends', t.tema, t.url, t.fecha, 'Búsqueda general', { volumenBusquedaAproximado: t.volumenAproximado || null, pais: evidencia.pais, pertinencia: 'Coincidencia de términos; validar contexto.' }));
-  evidencia.videos?.filter(v => v.pertinente !== false).slice(0, 10).forEach(v => agregar('YouTube', v.titulo, v.url, v.publicado, 'Video popular', { vistasAcumuladas: v.vistas ?? null, hashtagsObservados: v.hashtags || [], pais: evidencia.pais }));
-  evidencia.plataformas?.forEach(p => p.items.filter(i=>i.pertinente !== false).slice(0, 5).forEach(i => agregar(p.fuente, i.titulo, i.url, i.fecha, p.fuente === 'X' ? 'Publicación pública' : 'Cuenta autorizada', { formato: i.formato, metricas: i.metricas, hashtagsObservados: i.hashtags || [], alcance: p.alcance, consultado: p.consultado || evidencia.consultado })));
+  evidencia.videos?.filter(v => v.pertinente !== false).slice(0, 10).forEach(v => agregar('YouTube', v.titulo, v.url, v.publicado, evidencia.youtube?.modo==='busqueda_tematica'?'Video encontrado por tema':'Video de selección popular', { vistasAcumuladas: v.vistas ?? null, hashtagsObservados: v.hashtags || [], disponibilidadRegional: evidencia.pais, consulta:evidencia.youtube?.consulta,alcance:evidencia.youtube?.alcance }));
+  (evidencia.descubrimientos||[evidencia.descubrimiento].filter(Boolean)).forEach(f=>f.items?.filter(i=>i.pertinente!==false).slice(0,10).forEach(i=>agregar(f.fuente,i.titulo,i.url,i.fecha,i.tipoFuente||'Contenido público externo',{formato:i.formato,metricas:i.metricas,hashtagsObservados:i.hashtags||[],alcance:f.alcance,consultado:f.consultado,consulta:i.consulta||i.tema||i.titulo})));
+  evidencia.referenciasManuales?.slice(0,10).forEach(r=>agregar(r.plataforma,r.titulo,r.url,r.fecha,'Referencia manual del equipo',{verificada:false,nota:r.nota||'',consultado:r.consultado}));
   return catalogo;
 }
 

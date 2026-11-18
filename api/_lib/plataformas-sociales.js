@@ -69,7 +69,8 @@ export async function consultarPlataformas(tema) {
   return Promise.all(Object.keys(requeridas).map(async red=>{
     const alcance=red==='X'?'Publicaciones públicas recientes por tema; sin filtro geográfico ni ranking de tendencias.':'Publicaciones de la cuenta autorizada; no son tendencias globales de la plataforma.';
     const faltantes=requeridas[red].filter(k=>!process.env[k]?.trim());
-    const base={fuente:red,url:DOCUMENTACION[red],alcance,items:[],consultado:new Date().toISOString()};
+    const base={fuente:red,url:DOCUMENTACION[red],alcance,modo:red==='X'?'busqueda_publica':'cuenta_autorizada',items:[],consultado:new Date().toISOString()};
+    if(red==='X')return {...base,estado:'No habilitada',detalle:'Excluida por la configuración de solo fuentes gratuitas. No se realizan consultas ni se consumen créditos de X.'};
     if(faltantes.length)return {...base,estado:'Sin configurar',detalle:`Requiere autorización y configuración del servidor: ${faltantes.join(', ')}.`};
     try{const resultado=await cache(huella([red, red==='X'?tema.toLowerCase().trim():'', ...requeridas[red].map(k=>process.env[k])]),async()=>({items:await leer(red,tema),consultado:new Date().toISOString()}));return {...base,...resultado,estado:resultado.items.length?'Consultada':'Sin resultados',detalle:alcance};}
     catch(err){return {...base,estado:'No disponible',detalle:err.message};}

@@ -15,7 +15,7 @@ const MODELOS = [
 ].filter(Boolean);
 
 // Obtener API key con fallback de lectura directa del archivo .env en caliente
-function getApiKey() {
+export function getApiKey() {
   if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
     return process.env.GEMINI_API_KEY.trim();
   }
@@ -70,7 +70,7 @@ const pausas = new Map();
 let bytesPendientes = 0;
 
 // Una cuota agotada no debe provocar una cascada de peticiones a otros modelos.
-export async function consultarGemini(apiKey, parts, { tiempoRespuestaMs = 18000 } = {}) {
+export async function consultarGemini(apiKey, parts, { tiempoRespuestaMs = 18000, pensamientoRapido = false } = {}) {
   const clave = huella([apiKey]);
   const comprobarPausa = () => {
     const restante = (pausas.get(clave) || 0) - Date.now();
@@ -84,28 +84,34 @@ export async function consultarGemini(apiKey, parts, { tiempoRespuestaMs = 18000
   try {
     return await limitarGemini(async () => {
       comprobarPausa();
-      return invocarGemini(apiKey, parts, clave, Math.max(1, Math.min(32000, Number(tiempoRespuestaMs) || 18000)));
+      return invocarGemini(apiKey, parts, clave, Math.max(1, Math.min(32000, Number(tiempoRespuestaMs) || 18000)),pensamientoRapido);
     });
   } finally { bytesPendientes -= bytes; }
 }
 
-async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs) {
+async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs,pensamientoRapido) {
   const payload = {
     contents: [{ parts }],
     generationConfig: { responseMimeType: 'application/json' }
   };
 
   const cuerpo = JSON.stringify(payload);
-  const limite = Date.now() + 32000;
-  for (const modelo of [...new Set(MODELOS)]) {
+  const limite = Date.now() + Math.min(32000,tiempoRespuestaMs);
+  let fallosTransitorios=0;
+  const modelos=pensamientoRapido?[process.env.GEMINI_MODEL,'gemini-3.5-flash-lite',...MODELOS].filter(Boolean):MODELOS;
+  for (const modelo of [...new Set(modelos)]) {
     if (Date.now() >= limite) break;
     try {
+      // Solo modelos cuya compatibilidad está documentada. Los alias y
+      // modelos personalizados conservan su configuración original.
+      const nivel=pensamientoRapido?(/^gemini-3(?:\.[56])?-flash(?:-preview|-lite)?$/.test(modelo)?'minimal':/^gemini-3\.[78]-flash$/.test(modelo)?'low':null):null;
+      const cuerpoModelo=nivel?JSON.stringify({...payload,generationConfig:{...payload.generationConfig,thinkingConfig:{thinkingLevel:nivel}}}):cuerpo;
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-          body: cuerpo,
+          body: cuerpoModelo,
           signal: AbortSignal.timeout(Math.min(tiempoRespuestaMs, Math.max(1, limite - Date.now())))
         }
       );
@@ -119,7 +125,12 @@ async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs) {
           throw new ErrorServicio('La cuota de IA está temporalmente ocupada. Intenta más tarde.', 429, segundos);
         }
         if (response.status === 404) continue;
-        if (response.status >= 500) throw new ErrorServicio('El proveedor de IA está ocupado. Intenta de nuevo en unos segundos.', 503, 10);
+        if (response.status >= 500) {
+          // Un modelo saturado permite una alternativa de la lista configurada,
+          // dentro del mismo presupuesto. Una cuota 429 sigue deteniendo todo.
+          if(++fallosTransitorios<2&&Date.now()<limite-1000)continue;
+          throw new ErrorServicio('El proveedor de IA está ocupado. Intenta de nuevo en unos segundos.', 503, 10);
+        }
         throw new ErrorServicio('El proveedor de IA rechazó la solicitud. Revisa la configuración del servicio.', 502, 30);
       }
 

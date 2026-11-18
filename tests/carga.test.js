@@ -109,6 +109,16 @@ test('429 no dispara fallback, comparte pausa por clave y devuelve Retry-After',
   } finally { globalThis.fetch = original; }
 });
 
+test('Gemini usa una sola alternativa ante saturación y mantiene el límite total sin cambiar una cuota por más peticiones', async () => {
+  const previo=globalThis.fetch;let modelos=[];
+  try {
+    globalThis.fetch=async url=>{modelos.push(String(url));return modelos.length===1?{ok:false,status:503}:{ok:true,json:async()=>({candidates:[{content:{parts:[{text:'{"ok":true}'}]}}]})};};
+    assert.equal((await consultarGemini('alternativa-saturacion',[])).ok,true);assert.equal(modelos.length,2);assert.notEqual(modelos[0],modelos[1]);
+    modelos=[];globalThis.fetch=async url=>{modelos.push(String(url));return {ok:false,status:503};};
+    await assert.rejects(consultarGemini('todos-saturados',[]),e=>e.status===503);assert.equal(modelos.length,2);
+  }finally{globalThis.fetch=previo;}
+});
+
 test('Gemini no reintenta rechazos permanentes ni timeouts como si fueran modelos ausentes', async () => {
   const original = globalThis.fetch;
   try {
@@ -119,6 +129,16 @@ test('Gemini no reintenta rechazos permanentes ni timeouts como si fueran modelo
     globalThis.fetch=async()=>{throw new DOMException('Tiempo agotado','TimeoutError');};
     await assert.rejects(consultarGemini('timeout-test',[]), e=>e.status===504);
   } finally { globalThis.fetch=original; }
+});
+
+test('calendarios reducen la latencia con niveles compatibles sin cambiar la revisión multimodal',async()=>{
+  const previo=globalThis.fetch,configuraciones=[];
+  try {
+    globalThis.fetch=async(url,o)=>{configuraciones.push({url:String(url),config:JSON.parse(o.body).generationConfig});return configuraciones.length===1?{ok:false,status:503}:configuraciones.length===2?{ok:false,status:404}:{ok:true,json:async()=>({candidates:[{content:{parts:[{text:'{}'}]}}]})};};
+    await consultarGemini('rapido-calendario',[],{pensamientoRapido:true});
+    assert.match(configuraciones[0].url,/gemini-3\.5-flash-lite/);assert.equal(configuraciones[0].config.thinkingConfig.thinkingLevel,'minimal');assert.equal(configuraciones[1].config.thinkingConfig.thinkingLevel,'minimal');assert.equal(configuraciones[2].config.thinkingConfig.thinkingLevel,'low');
+    await consultarGemini('normal-revision',[]);assert.equal(configuraciones[3].config.thinkingConfig,undefined);
+  }finally{globalThis.fetch=previo;}
 });
 
 test('los calendarios pueden ampliar la espera sin superar el presupuesto total de IA', async () => {
