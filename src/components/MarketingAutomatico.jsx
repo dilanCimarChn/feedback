@@ -47,7 +47,7 @@ export default function MarketingAutomatico({perfil,comportamiento,contexto,onUs
   const ocupado=useRef(false);
   const editor=useRef(null);
   const botonPieza=useRef(null);
-  useEffect(()=>{if(contexto?.texto&&!ocupado.current)setForm(f=>({...f,descripcion:contexto.texto,referencias:[...(f.referencias||[]),...(contexto.referencias||[])].filter((r,i,a)=>a.findIndex(x=>x.url===r.url)===i).slice(-5)}));},[contexto]);
+  useEffect(()=>{if((contexto?.texto||contexto?.referencias?.length)&&!ocupado.current)setForm(f=>({...f,descripcion:f.descripcion||perfil?.descripcion||contexto.texto||'',referencias:[...(f.referencias||[]),...(contexto.referencias||[])].filter((r,i,a)=>a.findIndex(x=>x.url===r.url)===i).slice(-5)}));},[contexto]);
   const paraGuardar=useMemo(()=>({form,plan}),[form,plan]);
   useGuardadoDiferido(CLAVE,paraGuardar,setAviso);
   useEffect(()=>()=>{detener.current=true;},[]);
