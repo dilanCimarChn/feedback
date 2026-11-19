@@ -49,11 +49,11 @@ test('consulta un hashtag temático, conserva fuentes externas y no inventa mét
         assert.equal(u.searchParams.get('user_id'), '6102');
         return respuesta({ data: [{ id: '9102' }] });
       }
-      assert.match(u.pathname, /\/9102\/(top_media|recent_media)$/);
+      assert.equal(u.pathname, '/v99.0/9102/top_media');
       const campos = u.searchParams.get('fields').split(',');
-      for (const campo of ['caption', 'permalink', 'timestamp', 'media_type', 'like_count', 'comments_count']) assert.ok(campos.includes(campo));
+      assert.deepEqual(campos, ['id', 'permalink', 'caption']);
       assert.ok(!campos.includes('username') && !campos.includes('media_product_type'));
-      assert.equal(u.searchParams.get('limit'), '10');
+      assert.equal(u.searchParams.get('limit'), '3');
       return respuesta({ data: [media('EDU_1', { permalink: 'https://www.instagram.com/p/EDU_1/?tracking=1#hash' }),
         media('NO', { permalink: 'https://evil.example/p/NO/', like_count: 99 }),
         media('NO', { permalink: 'javascript:alert(1)' })] });
@@ -62,19 +62,19 @@ test('consulta un hashtag temático, conserva fuentes externas y no inventa mét
     assert.equal(resultado.estado, 'Consultada');
     assert.equal(resultado.items.length, 1);
     assert.equal(resultado.items[0].url, 'https://www.instagram.com/p/EDU_1/');
-    assert.equal(resultado.items[0].etiqueta, 'Publicaciones destacadas por hashtag');
+    assert.equal(resultado.items[0].etiqueta, 'Publicaciones destacadas por hashtag en Instagram');
     assert.equal(resultado.items[0].formato, 'Clip', 'VIDEO no prueba que sea Reel');
     assert.equal(resultado.items[0].metricas.likes, null);
     assert.equal(resultado.items[0].metricas.comentarios, 2);
     assert.deepEqual(resultado.items[0].hashtags, ['#Education', '#Learning']);
     assert.equal(resultado.items[0].tipoFuente, 'InstagramHashtag');
-    assert.equal(resultado.items[0].procedencias.length, 2);
+    assert.equal(resultado.items[0].procedencias.length, 1);
     assert.equal(resultado.items[0].fecha, '2026-11-17T12:00:00.000Z');
     assert.equal(resultado.contextoGeografico.aplicado, false);
     assert.equal(resultado.contextoGeografico.regionSolicitada, 'New York');
-    assert.equal(resultado.subfuentes.length, 2);
-    assert.match(resultado.subfuentes.find(s => s.seleccion === 'recent_media').detalle, /24 horas/);
-    assert.equal(peticiones.length, 3);
+    assert.equal(resultado.subfuentes.length, 1);
+    assert.equal(resultado.subfuentes[0].seleccion, 'top_media');
+    assert.equal(peticiones.length, 2);
     assert.ok(peticiones.every(p => p.u.hostname === 'graph.facebook.com' && p.u.protocol === 'https:'));
     assert.ok(peticiones.every(p => !p.u.searchParams.has('access_token') && p.opciones.redirect === 'error'));
     assert.ok(peticiones.every(p => p.opciones.headers.Authorization === 'Bearer token-prueba-instagram-externo'));
@@ -131,11 +131,11 @@ test('errores de acceso público no se ocultan y las otras rutas pueden aportar 
       : new URL(url).pathname.endsWith('/top_media') ? respuesta({}, 404)
         : respuesta({ data: [media('RECENT')] });
     const resultado = await consultarInstagramExterno({ hashtags: ['educacion'] });
-    assert.equal(resultado.estado, 'Consultada');
-    assert.equal(resultado.parcial, true);
-    assert.equal(resultado.items.length, 1);
-    assert.equal(resultado.items[0].procedencias[0].seleccion, 'recent_media');
-    assert.ok(resultado.avisos.some(a => /Acceso público pendiente/.test(a)));
+    assert.equal(resultado.estado, 'No disponible');
+    assert.equal(resultado.parcial, false);
+    assert.equal(resultado.items.length, 0);
+    assert.equal(resultado.subfuentes[0].seleccion, 'top_media');
+    assert.equal(resultado.subfuentes[0].causa, 'error_proveedor');
   });
 });
 
@@ -167,7 +167,7 @@ test('respeta dos hashtags y dos cuentas como máximo sin aceptar rutas o campos
     assert.deepEqual(resultado.hashtagsConsultados, ['#uno', '#dos']);
     assert.deepEqual(resultado.cuentasReferencia, ['@primera', '@segunda']);
     assert.equal(resultado.estado, 'Sin resultados');
-    assert.equal(peticiones.length, 8);
+    assert.equal(peticiones.length, 6);
     assert.ok(resultado.avisos.some(a => /máximo 2/.test(a)));
     assert.ok(peticiones.every(u => u.hostname === 'graph.facebook.com'));
   });
@@ -185,13 +185,13 @@ test('la caché reutiliza IDs durante siete días y el límite de 30 etiquetas e
         medios++; return respuesta({ data: [media('CUOTA')] });
       };
       await Promise.all([consultarInstagramExterno({ hashtags: ['etiqueta0'] }), consultarInstagramExterno({ hashtags: ['etiqueta0'] })]);
-      assert.equal(busquedas, 1); assert.equal(medios, 2);
+      assert.equal(busquedas, 1); assert.equal(medios, 1);
       await consultarInstagramExterno({ hashtags: ['etiqueta0'] });
-      assert.equal(busquedas, 1); assert.equal(medios, 2);
+      assert.equal(busquedas, 1); assert.equal(medios, 1);
       ahora += 16 * 60000;
       await consultarInstagramExterno({ hashtags: ['etiqueta0'] });
       assert.equal(busquedas, 1, 'El ID se conserva al renovar los medios de 15 minutos');
-      assert.equal(medios, 4);
+      assert.equal(medios, 2);
       for (let i = 1; i < 30; i++) await consultarInstagramExterno({ hashtags: [`etiqueta${i}`] });
       assert.equal(busquedas, 30);
       const antes = busquedas + medios;
