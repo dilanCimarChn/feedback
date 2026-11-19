@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import {cargarEntornoLocal} from './api/_lib/entorno.js';
+import {cargarEntornoLocal,origenApiDesarrollo} from './api/_lib/entorno.js';
 import { resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { statSync } from 'node:fs';
@@ -11,7 +11,10 @@ cargarEntornoLocal();
 // Funciones serverless disponibles en /api (mismo nombre que el archivo)
 const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'metricas-propias', 'plan-marketing', 'plan-automatico', 'senales-sociales', 'campanas', 'regenerar-publicacion'];
 
-export default defineConfig({
+export default defineConfig(({command,isPreview})=>{
+  const apiRemota=command==='serve'&&!isPreview?origenApiDesarrollo(process.env.API_REMOTA_DESARROLLO):'';
+  return {
+  define: {'import.meta.env.API_REMOTA_DESARROLLO': JSON.stringify(apiRemota)},
   build: {
     rollupOptions: {
       input: {
@@ -21,12 +24,23 @@ export default defineConfig({
       }
     }
   },
-  server: { fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/.data.local/**'] } },
+  server: {
+    fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/.data.local/**'] },
+    proxy: apiRemota?{'/api':{
+      target:apiRemota,changeOrigin:true,secure:true,proxyTimeout:70000,
+      configure(proxy){proxy.on('error',(_error,_req,res)=>{
+        if(res.headersSent||res.writableEnded)return;
+        res.writeHead(502,{'Content-Type':'application/json'});
+        res.end(JSON.stringify({error:'No se pudo conectar con el backend de producción. Comprueba su disponibilidad y tu conexión.'}));
+      });}
+    }}:undefined
+  },
   plugins: [
     react(),
     {
       name: 'serverless-api-dev-middleware',
       configureServer(server) {
+        if(apiRemota)return; // En este modo las API se resuelven exclusivamente en Vercel.
         server.middlewares.use(async (req, res, next) => {
           const nombre = req.url.split('?')[0].replace(/^\/api\//, '');
           if (!req.url.startsWith('/api/') || !RUTAS_API.includes(nombre)) {
@@ -84,4 +98,5 @@ export default defineConfig({
       }
     }
   ]
+  };
 });

@@ -124,6 +124,9 @@ export default function App() {
         </div>
       )}
 
+      {import.meta.env.DEV&&<p className="marketing-nota" role="status">{import.meta.env.API_REMOTA_DESARROLLO
+        ? 'Modo local conectado a producción: las consultas y campañas usan el mismo servidor que la web.'
+        : 'Modo local independiente: las conexiones usan las variables configuradas en este equipo.'}</p>}
       <nav className="pestanas" aria-label="Pantallas">
         <button type="button" aria-current={pantalla === 'marketing' ? 'page' : undefined} onClick={() => setPantalla('marketing')}>Estrategia y calendario</button>
         <button type="button" aria-current={pantalla === 'revision' ? 'page' : undefined} onClick={() => setPantalla('revision')}>Revisar publicación</button>

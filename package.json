@@ -9,7 +9,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "comprobar:descubrimiento": "node scripts/comprobar-descubrimiento.mjs"
+    "comprobar:descubrimiento": "node scripts/comprobar-descubrimiento.mjs",
+    "dev:produccion": "node scripts/desarrollo.mjs produccion",
+    "dev:local": "node scripts/desarrollo.mjs local"
   },
   "dependencies": {
     "@vercel/blob": "^2.9.0",
