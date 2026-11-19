@@ -7,7 +7,11 @@ export default async function handler(req, res) {
   const codigo = process.env.APP_ACCESS_CODE?.trim();
   if (codigo && req.headers['x-codigo-acceso'] !== codigo) return res.status(401).json({ error: 'Ingresa el código de acceso.', codigoRequerido: true });
   const { tema = '', pais = 'BO',dias=7,idioma='',hashtags,cuentas,localidad='',orden='viewCount',palabrasClave='',canalId='',accion='consultar',hallazgoId } = req.body || {};
-  if(!['consultar','guardar'].includes(accion))return res.status(400).json({error:'Acción de radar no válida.'});
+  if(!['consultar','guardar','preferencias'].includes(accion))return res.status(400).json({error:'Acción de radar no válida.'});
+  if(accion==='preferencias'){
+    const hashtagsInstagram=[...new Set((process.env.INSTAGRAM_DISCOVERY_HASHTAGS||'').split(',').map(h=>h.trim().replace(/^#/,'').toLowerCase()).filter(h=>/^[\p{L}\p{N}_]{1,100}$/u.test(h)))].slice(0,2);
+    return res.status(200).json({hashtagsInstagram});
+  }
   if(accion==='guardar'){
     if(!validarAccesoEquipo(req,res))return;
     if(!almacenamientoDisponible())return res.status(503).json({error:'No hay almacenamiento disponible para guardar el hallazgo.'});
