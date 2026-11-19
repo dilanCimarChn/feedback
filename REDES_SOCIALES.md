@@ -98,3 +98,23 @@ npm.cmd run dev -- --host 127.0.0.1
 ```
 
 Abrir http://127.0.0.1:5173/ (Vite anunciara otro puerto si este esta ocupado). El diagnostico muestra presencia de variables, estados y hasta cinco enlaces de resultados; no muestra valores de credenciales ni respuestas crudas. La generacion sigue usando el catalogo externo para resolver IDs de referencias a enlaces reales; sin referencia reciente una pieza se identifica como hipotesis editorial. Los archivos del almacenamiento local de desarrollo quedan excluidos del servidor de archivos de Vite.
+
+## Instagram por hashtag: flujo mínimo y calendario
+
+El conector reutiliza `ig_hashtag_search` con `q` sin `#` y usa el ID de esa respuesta para llamar a `top_media`. Solicita hasta tres publicaciones con `id,permalink,caption`; si Meta rechaza los campos con código 100, hace un único intento con `id,permalink`. No consulta `recent_media` en este flujo ni usa IDs o enlaces fijos. Business Discovery permanece separado. Las secciones anteriores que describen `recent_media` corresponden al comportamiento previo.
+
+En **Fuentes y tendencias**, el campo visible **Hashtag de Instagram** acepta `#educacion` o `educacion`. La acción protegida `preferencias` de `/api/tendencias` permite cargar hasta dos valores públicos de `INSTAGRAM_DISCOVERY_HASHTAGS` como lista inicial opcional; no devuelve credenciales. El token, el ID de cuenta y la versión Graph se usan solo en el backend.
+
+Los resultados se etiquetan **Publicaciones destacadas por hashtag en Instagram** y muestran la etiqueta consultada y el enlace para abrir cada publicación. Si falta caption, se conserva `texto: null` y no se inventan texto, formato, vistas ni otras métricas ausentes. La pertinencia queda sin confirmar; el hashtag identifica la consulta, no demuestra qué dice cada publicación.
+
+Cada resultado puede enviarse al calendario con **Usar como referencia del calendario**; **Crear mi calendario** también incluye las referencias disponibles, priorizando las de Instagram y con un máximo de cinco. Se conservan el enlace, hashtag y texto disponible sin sustituir una descripción de marca ya escrita. Las fuentes seleccionadas por el navegador se identifican como aportadas por el equipo, no como una respuesta autenticada del proveedor. Si una idea cita Instagram, el enlace aparece visible en su detalle, junto a la idea. El generador recibe la instrucción de no describir una publicación cuyo texto no fue recibido.
+
+Validación del 18 de noviembre de 2026:
+
+- Se encontró la implementación tanto en la copia actual como en `feat/descubrimiento-publico`; no había cambios locales ajenos al iniciar.
+- La consulta real `POST /api/tendencias` con `hashtags: ["#educacion"]` en el **backend de Vercel Production ya desplegado** devolvió HTTP 200 global, pero Instagram informó **token rechazado o vencido** en `ig_hashtag_search`, sin enlaces. YouTube y Google Trends sí devolvieron datos. El éxito global no valida Instagram.
+- `vercel env run -e production` pudo cargar configuración en un proceso temporal sin escribir archivos, pero no exportó el token marcado como Secret. Por tanto, la prueba local no dispuso de un token real válido. No se imprimieron secretos ni se actualizaron las variables de producción.
+- Chrome verificó el flujo completo en una instancia local aislada con **proveedores simulados**: consultar `#educacion`, mostrar tres enlaces sin texto, seleccionar una referencia, generar una idea y ver su enlace junto a ella. Esto prueba la integración, no los permisos reales de Meta.
+- Se corrigió la pérdida de referencias al planificar en el día local anterior al UTC. Las pruebas comparan días completos para respetar esa diferencia.
+
+Antes de la comprobación final, el administrador debe revisar o renovar `INSTAGRAM_ACCESS_TOKEN` en **Vercel Production**, usando un acceso que funcione para la misma cuenta de `INSTAGRAM_USER_ID`. No enviarlo por chat ni incorporarlo al frontend o a Git. Tras desplegar estos cambios, abrir el radar de producción, consultar `#educacion` y exigir enlaces reales devueltos por el backend. La verificación queda pendiente hasta ese resultado. Facebook sigue pendiente de acceso a páginas públicas.
