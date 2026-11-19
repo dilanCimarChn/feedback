@@ -3,6 +3,8 @@ import { crearCacheAsync, huella, limitarFuentes } from './carga.js';
 const DOC_HASHTAGS = 'https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-facebook-login/hashtag-search';
 const DOC_BUSINESS = 'https://developers.facebook.com/documentation/instagram-platform/instagram-graph-api/reference/ig-user/business_discovery';
 const CAMPOS_MEDIA = 'id,caption,media_type,permalink,timestamp,like_count,comments_count';
+const CAMPOS_HASHTAG = 'id,permalink,caption';
+const CAMPOS_HASHTAG_MINIMOS = 'id,permalink';
 const MINUTOS_15 = 15 * 60 * 1000, SEMANA = 7 * 86400000;
 const cacheMedia = crearCacheAsync({ max: 100, ahora: () => Date.now() });
 const cacheIds = crearCacheAsync({ max: 1000, ttlMs: SEMANA, ahora: () => Date.now() });
@@ -79,13 +81,26 @@ function cuotaActual(id) {
     alcance: 'Local a este proceso y cuenta; registra intentos, no verifica el uso global entre apps, reinicios o instancias. Meta controla su propia cuota.' };
 }
 
-function mensajeError(status, codigo, tipo) {
-  if (status === 401 || codigo === 190) return 'El token de Instagram fue rechazado o venció. Renueva el acceso autorizado; no se consultaron publicaciones propias como sustituto.';
-  if (status === 429 || [4, 17, 32, 613].includes(codigo)) return 'Meta indicó un límite de consultas. Revisa la cuota de la cuenta antes de reintentar.';
-  if ([403, 404].includes(status) || [10, 200].includes(codigo)) return tipo === 'InstagramHashtag'
-    ? 'Acceso público pendiente o rechazado: revisar App Review, Instagram Public Content Access y el permiso instagram_basic para Hashtag Search. No se sustituyó por contenido de la cuenta propia.'
-    : 'Business Discovery no está disponible para esa cuenta: revisar instagram_basic, instagram_manage_insights, pages_read_engagement, App Review cuando corresponda y que la referencia sea una cuenta profesional accesible.';
-  return 'Meta rechazó la consulta externa. Revisa versión, identificadores, permisos y disponibilidad del recurso; no se usó contenido propio como sustituto.';
+function errorProveedor(status, codigo, tipo) {
+  let causa = 'error_proveedor';
+  let mensaje = 'Instagram rechazó la consulta externa. Revisa la versión, los identificadores y la disponibilidad del recurso.';
+  if (status === 401 || codigo === 190) {
+    causa = 'token_vencido';
+    mensaje = 'El token de Instagram fue rechazado o venció. Renueva INSTAGRAM_ACCESS_TOKEN en el backend.';
+  } else if (status === 429 || [4, 17, 32, 613].includes(codigo)) {
+    causa = 'limite_consultas';
+    mensaje = 'Meta indicó un límite de consultas. Revisa la cuota de la cuenta antes de reintentar.';
+  } else if (status === 403 || [10, 200].includes(codigo)) {
+    causa = 'permiso_insuficiente';
+    mensaje = tipo === 'InstagramHashtag'
+      ? 'Permiso insuficiente para Hashtag Search: revisa App Review, Instagram Public Content Access y el permiso instagram_basic. No se usó contenido propio como sustituto.'
+      : 'Business Discovery no está disponible para esa cuenta: revisa instagram_basic, instagram_manage_insights, pages_read_engagement y los permisos de la cuenta profesional.';
+  } else if (codigo === 100) {
+    mensaje = 'Meta rechazó los campos o parámetros de la consulta de Instagram (código 100).';
+  } else if (status >= 500) {
+    mensaje = 'El proveedor de Instagram no está disponible temporalmente. Las otras fuentes del radar siguen disponibles.';
+  }
+  return Object.assign(new Error(mensaje), { causa, codigoProveedor: codigo, estadoProveedor: status });
 }
 
 async function graph(config, ruta, parametros, tipo) {
@@ -101,7 +116,7 @@ async function graph(config, ruta, parametros, tipo) {
     }
     let datos;
     try { datos = await respuesta.json(); } catch { throw new Error('Instagram devolvió una respuesta externa no válida.'); }
-    if (!respuesta.ok || datos?.error) throw new Error(mensajeError(respuesta.status, Number(datos?.error?.code), tipo));
+    if (!respuesta.ok || datos?.error) throw errorProveedor(respuesta.status, Number(datos?.error?.code), tipo);
     return datos;
   });
 }
@@ -132,12 +147,13 @@ function numero(valor) {
 function normalizarMedia(media, fuente) {
   const url = urlInstagram(media?.permalink);
   if (!url) return null;
-  const titulo = texto(media.caption, 1200) || 'Publicación externa sin texto';
-  return { titulo, url, fecha: fechaMedia(media.timestamp),
+  const contenido = texto(media.caption, 1200) || null;
+  const titulo = contenido || 'Publicación externa sin texto';
+  return { titulo, texto: contenido, textoDisponible: Boolean(contenido), hashtag: fuente.tipoFuente === 'InstagramHashtag' ? fuente.consulta : null, url, fecha: fechaMedia(media.timestamp),
     formato: ({ IMAGE: 'Imagen', CAROUSEL_ALBUM: 'Carrusel', VIDEO: 'Clip' })[media.media_type] || 'No determinado',
     hashtags: [...new Set((titulo.match(/#[\p{L}\p{N}_]+/gu) || []))].slice(0, 12),
     metricas: { likes: numero(media.like_count), comentarios: numero(media.comments_count) },
-    tipoFuente: fuente.tipoFuente, etiqueta: fuente.seleccion === 'top_media' ? 'Publicaciones destacadas por hashtag' : fuente.seleccion === 'recent_media' ? 'Publicaciones recientes por hashtag' : 'Publicaciones de cuenta competidora', consulta: fuente.consulta, consultado: fuente.consultado,
+    tipoFuente: fuente.tipoFuente, etiqueta: fuente.seleccion === 'top_media' ? 'Publicaciones destacadas por hashtag en Instagram' : fuente.seleccion === 'recent_media' ? 'Publicaciones recientes por hashtag' : 'Publicaciones de cuenta competidora', consulta: fuente.consulta, consultado: fuente.consultado,
     observaciones: { tipoFuente: fuente.tipoFuente, seleccion: fuente.seleccion,
       consulta: fuente.consulta, geografiaVerificada: false,
       limite: fuente.tipoFuente === 'InstagramHashtag'
@@ -146,18 +162,23 @@ function normalizarMedia(media, fuente) {
     procedencias: [{ tipoFuente: fuente.tipoFuente, seleccion: fuente.seleccion, consulta: fuente.consulta }] };
 }
 
-function subfuente(tipoFuente, consulta, seleccion, datos, detalle = '') {
+function subfuente(tipoFuente, consulta, seleccion, datos, detalle = '', causa = null) {
   const fuente = { tipoFuente, consulta, seleccion, consultado: new Date().toISOString(),
     url: tipoFuente === 'InstagramHashtag' ? DOC_HASHTAGS : DOC_BUSINESS,
-    estado: datos ? (datos.length ? 'Consultada' : 'Sin resultados') : 'No disponible', detalle };
+    estado: datos ? (datos.length ? 'Consultada' : 'Sin resultados') : 'No disponible', detalle, causa };
   const items = (datos || []).map(media => normalizarMedia(media, fuente)).filter(Boolean);
-  if (datos && !items.length) fuente.estado = 'Sin resultados';
+  if (datos && !items.length) {
+    fuente.estado = 'Sin resultados';
+    fuente.causa = 'sin_resultados';
+    fuente.detalle = datos.length ? 'Instagram no devolvió publicaciones con enlaces válidos para esta consulta.' : 'La búsqueda no devolvió publicaciones para esta consulta.';
+  }
   return { items, subfuentes: [fuente] };
 }
 
 async function leerHashtag(config, hashtag) {
   const clave = huella(['hashtag', config.version, config.id, config.token, hashtag]);
   return cacheMedia(clave, async () => {
+    let seleccion = 'ig_hashtag_search';
     try {
       reservarHashtag(config.id, hashtag);
       const id = await cacheIds(clave, async () => {
@@ -169,16 +190,23 @@ async function leerHashtag(config, hashtag) {
         return String(encontrado);
       }, encontrado => encontrado ? SEMANA : MINUTOS_15);
       if (!id) return subfuente('InstagramHashtag', `#${hashtag}`, 'ig_hashtag_search', []);
-      const resultados = await Promise.all(['top_media', 'recent_media'].map(async seleccion => {
-        try {
-          const datos = await graph(config, `${id}/${seleccion}`, { user_id: config.id, fields: CAMPOS_MEDIA, limit: '10' }, 'InstagramHashtag');
-          if (!Array.isArray(datos?.data)) throw new Error('Instagram devolvió una colección de medios no válida.');
-          return subfuente('InstagramHashtag', `#${hashtag}`, seleccion, datos.data,
-            seleccion === 'recent_media' ? 'Medios de las últimas 24 horas según Meta; no necesariamente ordenados cronológicamente.' : 'Selección popular del hashtag según Meta; no es un ranking global ni por país.');
-        } catch (error) { return subfuente('InstagramHashtag', `#${hashtag}`, seleccion, null, error.message); }
-      }));
-      return { items: resultados.flatMap(r => r.items), subfuentes: resultados.flatMap(r => r.subfuentes) };
-    } catch (error) { return subfuente('InstagramHashtag', `#${hashtag}`, 'ig_hashtag_search', null, error.message); }
+      seleccion = 'top_media';
+      let datos;
+      let sinTexto = false;
+      try {
+        datos = await graph(config, id + '/top_media', { user_id: config.id, fields: CAMPOS_HASHTAG, limit: '3' }, 'InstagramHashtag');
+      } catch (error) {
+        // Si Meta no permite caption, conservar el flujo mínimo comprobado con enlaces.
+        // No se repiten rechazos de token, permisos, cuota o disponibilidad.
+        if (error.codigoProveedor !== 100) throw error;
+        sinTexto = true;
+        datos = await graph(config, id + '/top_media', { user_id: config.id, fields: CAMPOS_HASHTAG_MINIMOS, limit: '3' }, 'InstagramHashtag');
+      }
+      if (!Array.isArray(datos?.data)) throw new Error('Instagram devolvió una colección de publicaciones destacadas no válida.');
+      return subfuente('InstagramHashtag', '#' + hashtag, 'top_media', datos.data.slice(0, 3),
+        sinTexto ? 'Meta devolvió enlaces sin texto disponible; no se infiere el contenido de esas publicaciones.' : 'Publicaciones destacadas por hashtag en Instagram según Meta; no es un ranking global ni por país.');
+
+    } catch (error) { return subfuente('InstagramHashtag', `#${hashtag}`, seleccion, null, error.message, error.causa || 'error_proveedor'); }
   }, resultado => resultado.subfuentes.some(s => s.estado === 'No disponible') ? 15000 : MINUTOS_15);
 }
 
@@ -208,7 +236,7 @@ export async function consultarInstagramExterno({ tema = '', pais = '', region =
     contextoGeografico: { paisSolicitado: paisSeguro || null, regionSolicitada: texto(region, 120) || null,
       aplicado: false, detalle: 'País y región son contexto editorial; estos endpoints no filtran la audiencia por ubicación.' } };
   const faltantes = CLAVES.filter((_, i) => !configuracion[i]);
-  if (faltantes.length) return { ...base, estado: 'Sin configurar', detalle: `Descubrimiento externo pendiente: ${faltantes.join(', ')}. Hashtag Search requiere App Review e Instagram Public Content Access; las credenciales por sí solas no acreditan ese acceso.` };
+  if (faltantes.length) return { ...base, estado: 'Sin configurar', causa: 'sin_configurar', detalle: `Descubrimiento externo pendiente: ${faltantes.join(', ')}. Hashtag Search requiere App Review e Instagram Public Content Access; las credenciales por sí solas no acreditan ese acceso.` };
   const [version, id, token] = configuracion;
   if (!/^v\d+\.\d+$/.test(version) || !/^\d+$/.test(id)) return { ...base, estado: 'No disponible', detalle: 'Revisa META_GRAPH_VERSION (vNN.N) e INSTAGRAM_USER_ID numérico; no se consultaron fuentes externas.' };
   const etiquetas = selectores(hashtags, 'Hashtags', 2, avisos);
