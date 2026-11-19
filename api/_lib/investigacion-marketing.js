@@ -1,4 +1,5 @@
 import { obtenerSenales } from './senales-sociales.js';
+import { buscarNoticiasGdelt } from './noticias-gdelt.js';
 import { consultarInstagramExterno } from './instagram-descubrimiento.js';
 import { consultarFacebookExterno } from './descubrimiento-social.js';
 import { normalizarRadar } from '../../src/lib/radar.js';
@@ -110,19 +111,7 @@ export async function investigarMarketing(pais, tema, region = '', opciones = {}
 async function investigar(pais, tema, region,opciones) {
   const rss = `https://trends.google.com/trending/rss?geo=${pais}`;
   const query = consultaGeografica(pais, tema, region);
-  const consulta = new URLSearchParams({query,mode:'artlist',format:'json',timespan:`${opciones.dias}d`,maxrecords:'10',sort:'datedesc'});
-  const buscarNoticias = async () => {
-    const leer = async parametros => {
-      const d = await descargar(`https://api.gdeltproject.org/api/v2/doc/doc?${parametros}`);
-      if (!Array.isArray(d.articles)) throw new Error('Respuesta no válida.');
-      return d.articles.filter(a => /^https?:\/\//i.test(a.url || '')).map(a => ({titulo:a.title,url:a.url,fecha:a.seendate,idioma:typeof a.language==='string'?a.language:null}));
-    };
-    const noticias = await leer(consulta);
-    if (noticias.length || !region) return {noticias,consulta:query,nivel:region?'Localidad solicitada':'País solicitado'};
-    const nacional = new URLSearchParams(consulta);
-    nacional.set('query', consultaGeografica(pais, tema));
-    return {noticias:await leer(nacional),consulta:nacional.get('query'),nivel:'País solicitado; sin resultados para la localidad'};
-  };
+  const buscarNoticias = () => buscarNoticiasGdelt({consulta:query,consultaNacional:consultaGeografica(pais,tema),region,dias:opciones.dias});
   const tareas = await Promise.allSettled([
     cacheRss(pais, () => descargar(rss,'text').then(leerTendenciasRss)),
     obtenerSenales(pais,consultaYouTube(pais,tema,region),{dias:opciones.dias,idioma:opciones.idioma,orden:opciones.orden,palabrasClave:opciones.palabrasClave,canalId:opciones.canalId}),
@@ -138,8 +127,8 @@ async function investigar(pais, tema, region,opciones) {
     const consultada=r.status==='fulfilled';
     const cantidad=consultada?(i===1?r.value.videos.length:i===2?r.value.noticias.length:r.value.length):0;
     const estado=!consultada?'No disponible':i===1&&!r.value.conectado?'Sin configurar':cantidad?'Consultada':'Sin resultados';
-    const detalle=i===1?(consultada?r.value.aviso:r.reason?.message||'No se pudo consultar YouTube.'):i===2&&consultada?`${r.value.nivel}. Consulta: ${r.value.consulta}. Son menciones geográficas en noticias, no actividad de usuarios.`:i===2?'GDELT no respondió o devolvió datos no válidos. Las demás fuentes y el calendario siguen disponibles.':i===0?'Búsquedas generales del país, sin filtro por ciudad ni sector. Solo se vinculan como referencia las coincidencias temáticas.':'';
-    return {fuente:['Google Trends','YouTube','GDELT'][i],estado,detalle,url:[rss,'https://developers.google.com/youtube/data/reference/rest/v3/videos/list','https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/'][i]};
+    const detalle=i===1?(consultada?r.value.aviso:r.reason?.message||'No se pudo consultar YouTube.'):i===2&&consultada?`${r.value.nivel}. Consulta: ${r.value.consulta}. Son menciones geográficas en noticias, no actividad de usuarios.`:i===2?r.reason?.message||'GDELT no pudo completar la consulta de noticias. Las otras fuentes siguen disponibles.':i===0?'Búsquedas generales del país, sin filtro por ciudad ni sector. Solo se vinculan como referencia las coincidencias temáticas.':'';
+    return {fuente:['Google Trends','YouTube','GDELT'][i],estado,detalle,...(i===2?{causa:consultada?null:r.reason?.causa||'error_proveedor',codigoHttp:consultada?null:r.reason?.codigoHttp||null,reintentarEn:consultada?null:r.reason?.reintentarEn||null}:{}),url:[rss,'https://developers.google.com/youtube/data/reference/rest/v3/videos/list','https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/'][i]};
   });
   estados.push(...descubrimientos.map(({items,...estado})=>estado),{fuente:'X',estado:'No habilitada',detalle:'Excluida: solo se utilizan fuentes gratuitas.'},{fuente:'LinkedIn',estado:'Sin fuente externa',detalle:'La lectura de la organización pertenece a Métricas propias; no se utiliza como tendencia competitiva.'});
   const youtube=tareas[1].status==='fulfilled'?Object.fromEntries(Object.entries(tareas[1].value).filter(([k])=>k!=='videos')):{modo:tema?'busqueda_tematica':'seleccion_popular',conectado:false,consulta:consultaYouTube(pais,tema,region),aviso:tareas[1].reason?.message||'YouTube no disponible.'};
@@ -151,7 +140,7 @@ async function investigar(pais, tema, region,opciones) {
   data.periodoDias=opciones.dias;
   data.alcanceGeografico={pais,regionSolicitada:region || null,noticias:tareas[2].status === 'fulfilled' ? tareas[2].value.nivel : 'Sin datos disponibles',consultaNoticias:tareas[2].status === 'fulfilled' ? tareas[2].value.consulta : query,redes:'Las cuentas autorizadas e Instagram Hashtag Search no verifican geolocalización de audiencia. YouTube filtra disponibilidad de reproducción y busca menciones del lugar; Google Trends usa país. No equivalen a audiencia local.'};
   data.hashtagsObservados=hashtagsObservados(descubrimientos,data.videos,data.consultado);
-  data.limites=`YouTube busca videos públicos por tema de los últimos ${opciones.dias} días; sin tema consulta una selección popular actual. Instagram consulta hashtags y cuentas profesionales externas cuando los permisos lo permiten; recent_media cubre 24 horas, no un histórico configurable. TikTok permanece pendiente y no se consulta en el radar. Facebook requiere páginas de referencia con acceso público autorizado. Las publicaciones propias se muestran aparte. X está excluida para evitar consumo de pago. Google Trends y GDELT complementan el tema. Ninguna consulta mide personas conectadas ni horas pico; una observación no prueba crecimiento. Las categorías del radar son sugerencias editoriales si el proveedor no las devuelve.`;
+  data.limites=`YouTube busca videos públicos por tema de los últimos ${opciones.dias} días; sin tema consulta una selección popular actual. Instagram consulta hasta tres publicaciones destacadas por hashtag y cuentas profesionales externas cuando los permisos lo permiten; no ofrece un histórico configurable en este flujo. TikTok permanece pendiente y no se consulta en el radar. Facebook requiere páginas de referencia con acceso público autorizado. Las publicaciones propias quedan fuera del radar. X está excluida para evitar consumo de pago. Google Trends y GDELT complementan el tema. Ninguna consulta mide personas conectadas ni horas pico; una observación no prueba crecimiento. Las categorías del radar son sugerencias editoriales si el proveedor no las devuelve.`;
   data.resultados=normalizarRadar(data);
   return data;
 }
