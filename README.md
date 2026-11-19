@@ -123,3 +123,25 @@ Después de desplegar esta versión, los enlaces para la configuración de Meta 
 - https://feedback-sigma-one.vercel.app/eliminacion-de-datos
 
 La preparación de estas páginas no concede acceso a contenido público de Facebook: el radar sigue pendiente hasta obtener publicaciones reales de una página que no administremos. No se incorpora una devolución de llamada automática de borrado; la segunda URL contiene instrucciones públicas para presentar una solicitud.
+
+## Local con las mismas APIs que la web
+
+Para trabajar sobre la interfaz local y usar el backend ya publicado, ejecuta:
+
+```bash
+npm run dev:produccion
+```
+
+El navegador abre la interfaz local; Vite reenvía `/api` al proyecto `https://feedback-sigma-one.vercel.app`. Instagram, YouTube y las demás fuentes se consultan desde ese servidor con sus variables de Production. No se exportan ni copian los tokens al equipo. Se mantiene el código de acceso del servidor. Las consultas usan cuota real y las campañas compartidas que se creen o editen corresponden al mismo equipo de producción.
+
+La pantalla identifica este modo como **Modo local conectado a producción**. El perfil de marca, el borrador y el código guardado del navegador siguen perteneciendo a cada origen: localhost y el dominio público no comparten su almacenamiento del navegador. Para igualar el perfil de marca se puede exportar e importar su configuración.
+
+También se puede activar para `npm run dev` agregando solo esta URL pública en `.env.local` y reiniciando Vite:
+
+```env
+API_REMOTA_DESARROLLO=https://feedback-sigma-one.vercel.app
+```
+
+Para ejecutar y probar el backend local, utiliza `npm run dev:local`. Ese modo necesita sus propias variables de backend y no hereda los secretos de Production. El proxy se aplica solo al servidor de desarrollo; no crea un proxy de producción ni modifica Vercel. Su destino debe ser un origen HTTPS sin credenciales, rutas ni parámetros.
+
+Los cambios de interfaz siguen necesitando un despliegue para aparecer en la web pública. En el modo conectado, las correcciones nuevas del backend local también necesitan desplegarse antes de que el proxy pueda usarlas.
