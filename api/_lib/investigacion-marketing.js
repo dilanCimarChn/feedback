@@ -62,7 +62,9 @@ export function consultaYouTube(pais, tema, region = '') {
 
 function marcarPertinencia(items, tema, campo) {
   const terminos = terminosTema(tema);
-  return items.map(item => ({ ...item, pertinente: terminos.length > 0 && terminos.some(t => normalizar([item[campo],...(item.hashtags||[])].join(' ')).includes(t)) }));
+  return items.map(item => ({ ...item, pertinente: !terminos.length || item.textoDisponible === false
+    ? null
+    : terminos.some(t => normalizar([item[campo],...(item.hashtags||[])].join(' ')).includes(t)) }));
 }
 
 export function hashtagsObservados(plataformas, videos, consultado) {

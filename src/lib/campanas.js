@@ -71,5 +71,7 @@ export function referenciaManual(datos) {
 export function referenciaSeleccionada(datos) {
   const url=urlReferencia(datos?.url);
   if(!url||typeof datos?.titulo!=='string'||!datos.titulo.trim()||![...REDES,'Google Trends','GDELT'].includes(datos.plataforma))throw new Error('La referencia seleccionada necesita título, fuente y enlace válidos.');
-  return {id:crypto.randomUUID(),plataforma:datos.plataforma,titulo:datos.titulo.slice(0,600),url,tema:String(datos.tema||'').slice(0,150),fecha:fechaValida(datos.fecha)?datos.fecha:null,consultado:new Date().toISOString(),tipoFuente:'Referencia seleccionada por el equipo',metricas:{},nota:'Enlace aportado a la campaña; verificar vigencia y pertinencia.'};
+  const texto=typeof datos.texto==='string'?datos.texto.trim().slice(0,1200):'';
+  const hashtag=typeof datos.hashtag==='string'&&/^#[\p{L}\p{N}_]{1,100}$/u.test(datos.hashtag)?datos.hashtag:null;
+  return {id:crypto.randomUUID(),plataforma:datos.plataforma,titulo:datos.titulo.slice(0,600),url,tema:String(datos.tema||'').slice(0,150),fecha:fechaValida(datos.fecha)?datos.fecha:null,consultado:new Date().toISOString(),tipoFuente:'Referencia seleccionada por el equipo',tipoOrigen:typeof datos.tipoFuente==='string'?datos.tipoFuente.slice(0,150):null,texto:texto||null,textoDisponible:Boolean(texto),hashtag,metricas:{},nota:'Enlace aportado a la campaña; el contenido enviado por el navegador no se autentica como respuesta del proveedor. Verificar vigencia y pertinencia.'};
 }
