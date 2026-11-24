@@ -196,8 +196,7 @@ async function leerHashtag(config, hashtag) {
       try {
         datos = await graph(config, id + '/top_media', { user_id: config.id, fields: CAMPOS_HASHTAG, limit: '3' }, 'InstagramHashtag');
       } catch (error) {
-        // Si Meta no permite caption, conservar el flujo mínimo comprobado con enlaces.
-        // No se repiten rechazos de token, permisos, cuota o disponibilidad.
+        // Reintenta sin caption solo ante campos rechazados; conserva los demás errores.
         if (error.codigoProveedor !== 100) throw error;
         sinTexto = true;
         datos = await graph(config, id + '/top_media', { user_id: config.id, fields: CAMPOS_HASHTAG_MINIMOS, limit: '3' }, 'InstagramHashtag');

@@ -88,7 +88,6 @@ export default function ConfiguracionModal({ configuracion, configurado, onCerra
     setPerfil(prev => ({ ...prev, tipografias: { ...prev.tipografias, [clave]: valor } }));
   const actualizarComportamiento = (clave, valor) => setComportamiento(prev => ({ ...prev, [clave]: valor }));
 
-  // --- Paso 1: aprender ---
   const agregarMuestras = async archivos => {
     setErrorAnalisis('');
     const validos = archivos.filter(esImagen).slice(0, MAX_MUESTRAS - muestras.length);
@@ -155,7 +154,6 @@ export default function ConfiguracionModal({ configuracion, configurado, onCerra
     }
   };
 
-  // --- Paso 2: colores y referencias ---
   const actualizarColor = (indice, cambios) =>
     actualizarPerfil(
       'colores',
@@ -168,7 +166,6 @@ export default function ConfiguracionModal({ configuracion, configurado, onCerra
     setPerfil(prev => ({ ...prev, referencias: [...prev.referencias, ...nuevas].slice(0, MAX_REFERENCIAS) }));
   };
 
-  // --- Acciones generales ---
   const guardar = () => {
     if (!Object.values(comportamiento.revisar).some(Boolean)) {
       setPaso(2);

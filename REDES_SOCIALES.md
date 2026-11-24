@@ -1,132 +1,66 @@
-# Fuentes sociales
+# Fuentes sociales y alcance de los datos
 
-Actualizado: 17 de noviembre de 2026.
+El radar de **Fuentes y tendencias** reúne referencias públicas para orientar el calendario. Las métricas de cuentas propias utilizan `/api/metricas-propias` y permanecen separadas: una publicación propia no se presenta como tendencia competitiva. Configuración y permisos en [CONFIGURAR_REDES.md](CONFIGURAR_REDES.md).
 
-Guía práctica: [CONFIGURAR_REDES.md](CONFIGURAR_REDES.md) explica dónde registrarse, qué permisos obtener, cómo configurar el servidor y qué comprobar. Incluye el estado del proyecto y los pendientes para retomar en otra sesión.
+Se puede generar una campaña sin conectar cuentas sociales. Google Trends RSS y GDELT no necesitan tokens sociales en esta implementación, pero dependen de disponibilidad externa. Gemini, las APIs y el alojamiento tienen sus propias cuotas y condiciones.
 
-## Uso sencillo y costos
+## Fuentes del radar
 
-No hace falta conectar las seis redes para generar una campaña. Google Trends RSS y noticias GDELT permiten empezar sin tokens de redes sociales, sujetos a disponibilidad y condiciones del proveedor. Las conexiones de cuentas son opcionales y no aportan automáticamente Insights ni horas de actividad. La generación de textos sigue consumiendo Gemini según la cuenta configurada.
+| Fuente | Lectura implementada | Alcance y límites |
+| --- | --- | --- |
+| Google Trends | RSS por país, hasta 20 búsquedas | Búsquedas generales, sin filtro por ciudad o sector; se comprueba coincidencia temática |
+| YouTube | Búsqueda por tema o canal en los últimos 1–30 días; sin tema ni canal, selección popular | Hasta 10 resultados temáticos o 15 populares; no es un ranking completo ni identifica la ubicación de espectadores |
+| Instagram por hashtag | `ig_hashtag_search` y `top_media` | Hasta dos hashtags por consulta y tres publicaciones por hashtag; selección del proveedor, sin histórico configurable ni audiencia geográfica |
+| Instagram Business Discovery | Medios de hasta dos cuentas profesionales de referencia | Hasta diez medios por cuenta compatible y autorizada; no escucha global |
+| Facebook externo | `/{page_id}/posts` de hasta tres páginas de referencia | Hasta diez publicaciones por página, con acceso público aprobado; excluye la página propia |
+| GDELT | Noticias sobre tema y menciones geográficas | Complemento editorial; el lugar mencionado no identifica a los lectores |
+| TikTok | Integración pendiente en el radar | No consulta cuentas propias ni Discovery al investigar |
+| LinkedIn | Sin descubrimiento externo en esta aplicación | La lectura de la organización pertenece a métricas propias |
+| X | Consultas excluidas, incluso con token presente | Se puede planificar contenido para X sin atribuirle señales externas de esa red |
 
-**X queda excluido en el código, aunque exista `X_BEARER_TOKEN`**, para respetar la preferencia de no contratar APIs de pago. No se hacen consultas a esa red; crear propuestas editoriales para X sigue siendo posible. YouTube requiere proyecto, clave y cuota de Data API. Meta, TikTok y LinkedIn requieren permisos y productos aprobados según el acceso; no se promete acceso libre a tendencias globales ni se equipara autorización con una suscripción de escucha social.
+El país, ventana de días, idioma y filtros se aplican según las capacidades de cada fuente. Instagram no adquiere filtro geográfico por seleccionar un país. Las categorías o formatos inferidos por la aplicación son sugerencias editoriales cuando el proveedor no los devuelve.
 
-En Vercel Production se confirmó la presencia de `GEMINI_API_KEY`, `YOUTUBE_API_KEY`, `META_GRAPH_VERSION`, `INSTAGRAM_USER_ID`, `INSTAGRAM_ACCESS_TOKEN`, `FACEBOOK_PAGE_ID` y `FACEBOOK_PAGE_ACCESS_TOKEN`. Estas variables no acreditan permisos de descubrimiento externo. También se configuraron el almacenamiento privado y el código de acceso del equipo; ver [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
+### YouTube
 
-Para horarios de mayor actividad reales hacen falta estadísticas de audiencia de cada cuenta y zona; el histórico importado solo permite pruebas apoyadas en muestras de rendimiento. El sistema no garantiza visibilidad ni llama horas pico a horarios estimados.
-El radar prioriza Facebook, Instagram, TikTok, X (Twitter), LinkedIn y YouTube. Google Trends y GDELT son complementarios. Los adaptadores consultan APIs oficiales; no se hace scraping de sesiones ni se simulan resultados. Las credenciales se configuran en el servidor con las variables de `.env.example`, nunca con prefijo `VITE_`.
+Con tema o canal se hace una llamada a `search.list`, sin paginar, y una a `videos.list` si hay IDs válidos. Se admiten orden por relevancia, vistas acumuladas o fecha, idioma y canal público con ID `UC…`. La ventana admite 1–30 días y usa siete por defecto.
 
-| Red | Lectura implementada | Configuración | Alcance real |
-| --- | --- | --- | --- |
-| Facebook | `/{page_id}/posts`: texto, enlace, fecha y compartidos si se devuelven | `META_GRAPH_VERSION`, `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN` | Página autorizada; no ranking global ni Insights de audiencia |
-| Instagram | `/{ig_user_id}/media`: caption, formato, fecha, likes y comentarios | `META_GRAPH_VERSION`, `INSTAGRAM_USER_ID`, `INSTAGRAM_ACCESS_TOKEN` | Cuenta profesional autorizada mediante la configuración de Meta compatible con Graph Facebook; no API de Instagram Login en este adaptador |
-| Instagram externo | Hashtag Search: `ig_hashtag_search`, `top_media`, `recent_media`; Business Discovery: medios de cuentas profesionales de referencia | Las mismas variables de Meta/Instagram, permisos y App Review; `INSTAGRAM_DISCOVERY_ACCOUNTS` opcional, hasta 2 usuarios separados por coma | Descubrimiento limitado por tema y cuentas elegidas; no filtro geográfico de audiencia, escucha global ni Insights |
-| TikTok | `/v2/video/list/`: videos y métricas devueltas | `TIKTOK_ACCESS_TOKEN` con `video.list` | Videos públicos del usuario autorizado; no tendencias de todos los usuarios |
-| X | Ninguna llamada: fuente excluida | Un token existente no la activa | Sin datos externos de X; la API tiene consumo de pago |
-| LinkedIn | `/rest/posts?q=author`: publicaciones de organización | `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_ORGANIZATION_ID`, `LINKEDIN_VERSION` | Organización autorizada; sin métricas de rendimiento en esta llamada |
-| YouTube | Con tema: `search.list` de videos publicados en los últimos 1–30 días (7 por defecto) y `videos.list` por IDs; sin tema: `videos.list?chart=mostPopular` | `YOUTUBE_API_KEY` | Hasta 10 videos temáticos o 15 populares; el país indica disponibilidad o selección de catálogo, no ubicación de los espectadores; no clasificación automática de Shorts |
+Se conservan título, enlace, fecha, autor, duración y métricas devueltas. Si falla la consulta de detalles, se mantienen los resultados de búsqueda con métricas desconocidas y un aviso parcial. Si un detalle no vuelve en la respuesta válida, ese video se excluye. No se clasifican automáticamente Shorts ni se calcula velocidad de crecimiento.
 
-## Búsqueda temática de YouTube
+El país representa disponibilidad de reproducción o selección del catálogo, no residencia del creador ni actividad de su audiencia. Las vistas y likes son acumulados. Revisar la cuota efectiva del proyecto en Google Cloud; el repositorio no amplía cuotas ni activa pagos. Referencias: [búsqueda](https://developers.google.com/youtube/data/reference/rest/v3/search/list), [detalles](https://developers.google.com/youtube/data/reference/rest/v3/videos/list), [cuotas](https://developers.google.com/youtube/data/determine_quota_cost).
 
-Cada consulta temática no cacheada hace **una búsqueda y, si encuentra IDs válidos, una consulta de detalles**, sin paginar. Extrae título, enlace, fecha, duración, vistas, likes y hashtags presentes en la descripción. Solo devuelve IDs válidos, elimina duplicados y conserva la selección por relevancia. Los resultados temáticos se limitan a los últimos 1–30 días (7 por defecto); esto no equivale a un ranking de crecimiento. Si fallan los detalles, se conservan las observaciones de búsqueda con métricas desconocidas y aviso parcial. Sin tema se conserva la selección popular nacional.
+### Instagram
 
-La cuota predeterminada actual asigna **100 consultas `search.list` por día en una bolsa propia**, con una unidad por consulta; no son 100 unidades por búsqueda. `videos.list` cuesta una unidad de las **10.000 unidades diarias compartidas por los demás endpoints**. El reinicio es a medianoche del Pacífico (PT) y el saldo no se acumula. Comprobar las cuotas reales del proyecto en Google Cloud; no hay ampliación ni pago automático en esta implementación. Referencias: [búsqueda](https://developers.google.com/youtube/data/reference/rest/v3/search/list), [detalles](https://developers.google.com/youtube/data/reference/rest/v3/videos/list), [cuotas](https://developers.google.com/youtube/data/determine_quota_cost).
+El flujo por hashtag solicita `id,permalink,caption`. Si Meta rechaza esos campos con código 100, hace un único intento con `id,permalink`; no repite rechazos de token, permisos o cuota. No consulta `recent_media` en este flujo. Sin caption conserva `texto: null` y no inventa texto, imágenes, formato, vistas ni otras métricas.
 
-## Descubrimiento externo de Instagram
+La etiqueta **Publicaciones destacadas por hashtag en Instagram** describe la selección `top_media`; no demuestra crecimiento ni pertinencia. El hashtag identifica la consulta, no el contenido de una publicación cuyo texto no se recibió. Business Discovery conserva por separado su cuenta consultada y los campos disponibles. El tipo `VIDEO` se presenta como Clip cuando no hay evidencia para llamarlo Reel.
 
-Se propone **un hashtag automáticamente por tema**; se admiten hasta dos por consulta. La app necesita los permisos aplicables y **Instagram Public Content Access** aprobado por App Review. `top_media` y `recent_media` son selecciones del proveedor; `recent_media` incluye contenido de las últimas 24 horas y no se presupone orden cronológico. Meta permite consultar **30 hashtags únicos por cuenta en 7 días móviles**. El control local de intentos está en memoria; no sustituye la cuota global de Meta ni coordina otros procesos, despliegues o aplicaciones.
+El control local registra hasta 30 hashtags únicos en siete días por cuenta. Está en memoria y no coordina reinicios, aplicaciones o instancias; no sustituye la cuota global aplicada por Meta. Cada subfuente declara consulta, selección, fecha, estado y detalle. Un rechazo no se sustituye silenciosamente por publicaciones propias.
 
-Opcionalmente el administrador configura **hasta dos cuentas profesionales de referencia** en `INSTAGRAM_DISCOVERY_ACCOUNTS`, separadas por coma y sin `@` ni URL. El visitante no tiene que llenar ese campo. Business Discovery requiere acceso aprobado y permisos aplicables, entre ellos `instagram_basic`, `instagram_manage_insights` y `pages_read_engagement` según el flujo y los roles. No se adivinan cuentas ni se considera aprobada la aplicación por tener un token.
+Las preferencias `INSTAGRAM_DISCOVERY_HASHTAGS` y `INSTAGRAM_DISCOVERY_ACCOUNTS` admiten hasta dos valores separados por coma. Se acepta `INSTAGRAM_CUENTAS_REFERENCIA` como alternativa compatible. Sin hashtag configurado o elegido se propone uno a partir del tema. La acción protegida `preferencias` de `/api/tendencias` expone únicamente las opciones públicas, nunca credenciales. Referencias: [Hashtag Search](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-facebook-login/hashtag-search), [Business Discovery](https://developers.facebook.com/documentation/instagram-platform/instagram-graph-api/reference/ig-user/business_discovery).
 
-Cada subfuente conserva tipo, hashtag o usuario consultado, selección, instante, estado y detalle. Se declaran fuentes parciales, rechazo de permisos, falta de configuración y ausencia de resultados; no se sustituyen silenciosamente por publicaciones propias. El formato `VIDEO` se conserva como Clip cuando no hay evidencia para identificarlo como Reel. Ninguna de estas consultas acredita ubicación de audiencia, picos de conexión o eficacia de un hashtag. Referencias: [Hashtag Search](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-facebook-login/hashtag-search), [Business Discovery](https://developers.facebook.com/documentation/instagram-platform/instagram-graph-api/reference/ig-user/business_discovery).
+### Facebook y TikTok
 
-## Límites comunes
+Facebook externo requiere `FACEBOOK_DISCOVERY_PAGE_IDS`, `FACEBOOK_PUBLIC_ACCESS_TOKEN` y `META_GRAPH_VERSION`, con acceso público aprobado para ese uso. No reutiliza el token de la página propia. Ante configuración ausente, rechazo o falta de resultados válidos mantiene **Pendiente de acceso a páginas públicas**. Referencia: [Page Public Content Access](https://developers.facebook.com/docs/features-reference/page-public-content-access/).
 
-Los adaptadores de Meta requieren una versión Graph vigente en formato `vNN.N`. LinkedIn requiere versión vigente `AAAAMM` y usa `X-Restli-Protocol-Version: 2.0.0`. No se fija una versión implícita para evitar aparentar compatibilidad cuando el proveedor la retire. Los permisos concretos dependen del producto y configuración de cada aplicación; una clave por sí sola no concede acceso a cuentas.
+Existe un adaptador separado de TikTok Discovery para términos públicos no personalizados, pero no está conectado al radar. Utiliza `TIKTOK_DISCOVERY_ACCESS_TOKEN` y `TIKTOK_DISCOVERY_BUSINESS_ID`; el segundo corresponde al `open_id` autorizado, no al ID del anunciante. Requiere `discovery.search.words` y el acceso que apruebe TikTok. La ruta devuelve hasta 20 términos sin videos, vistas, volumen ni filtros históricos o regionales. Configurar esas variables no activa consultas en el radar. [Creative Center](https://ads.tiktok.com/business/creativecenter/) es una herramienta manual; no se integra ni se raspa. Referencia: [TikTok Discovery](https://business-api.tiktok.com/portal/docs?id=1832798345014338).
 
-No hay todavía flujo de conexión OAuth en el navegador, renovación automática de tokens, multiempresa ni almacenamiento de credenciales sociales por usuario. Los calendarios sí tienen persistencia compartida privada. Estas conexiones son para las cuentas que el administrador configure en esta instalación. Los tokens deben obtenerse por las vías oficiales y renovarse cuando corresponda. La UI no pide al visitante pegar claves; muestra requisitos y estado de conexión sin revelar valores.
+## Lectura de cuentas propias
 
-Cada conexión tiene timeout independiente y estados explícitos; X informa su exclusión. Un error de autorización/cuota no bloquea las otras redes. La investigación comparte caché en memoria de 15 minutos; las claves de consulta cambian con país, tema y credenciales según la fuente. Se consultan páginas acotadas, no históricos exhaustivos: hasta 15 publicaciones en los lectores de cuentas, 10 videos temáticos de YouTube y hasta 10 medios por cuenta en Business Discovery. Los datos consultados y sus alcances se incluyen en el contexto del generador y en los planes exportados y guardados para el equipo. También se envían a Gemini al generar una campaña.
+| Red | Lectura | Variables de servidor |
+| --- | --- | --- |
+| Facebook | Posts de la página autorizada: texto, enlace, fecha y compartidos si se devuelven | `META_GRAPH_VERSION`, `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN` |
+| Instagram | Medios de la cuenta profesional: caption, formato, fecha, likes y comentarios | `META_GRAPH_VERSION`, `INSTAGRAM_USER_ID`, `INSTAGRAM_ACCESS_TOKEN` |
+| TikTok | Videos públicos de la cuenta autorizada mediante Display API | `TIKTOK_ACCESS_TOKEN` con `video.list` |
+| LinkedIn | Posts de la organización; esta llamada no importa rendimiento | `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_ORGANIZATION_ID`, `LINKEDIN_VERSION` |
 
-No se equiparan vistas con alcance, ni likes con conversiones; las métricas ausentes quedan sin dato. Fechas de publicación no demuestran horas de mayor actividad. El generador puede elegir las seis redes; X admite Texto, Imagen o Clip. Esto no publica automáticamente.
+Las lecturas de cuentas están acotadas a hasta quince publicaciones por red. No aportan automáticamente alcance, conversiones, estadísticas de audiencia o mejores horarios. El histórico CSV/JSON sigue siendo la fuente para comparar resultados propios. YouTube utiliza datos públicos, no una conexión OAuth a las estadísticas privadas del canal.
 
-Los adaptadores de cuentas propias de Facebook, TikTok Display API y LinkedIn siguen disponibles por separado, sin escucha global. Los nuevos conectores externos requieren los accesos específicos descritos abajo. [TikTok Creative Center](https://ads.tiktok.com/business/creativecenter/) sirve como consulta manual: no hay integración API ni scraping de ese sitio. Para ampliar cobertura se necesitan fuentes con licencia y finalidad compatibles; [TikTok Research API](https://developers.tiktok.com/products/research-api), por ejemplo, restringe elegibilidad y finalidad. No se ha contratado ni integrado un proveedor externo de escucha social.
+## Uso en campañas y disponibilidad
 
-Referencias oficiales adicionales: [Facebook Pages](https://developers.facebook.com/docs/pages-api/posts/), [Instagram](https://developers.facebook.com/docs/instagram-platform/), [TikTok Display API](https://developers.tiktok.com/docs/en/tiktok-api-v2-video-list), [precios de X](https://docs.x.com/x-api/getting-started/pricing), [LinkedIn Posts y permisos](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api).
+Las referencias seleccionadas pueden llevarse al calendario con su enlace, hashtag y texto disponible. Los datos enviados desde el navegador se identifican como aportados por el equipo, sin autenticarlos como respuesta del proveedor. El generador no debe describir una publicación cuyo texto no recibió. Las fuentes utilizadas se envían a Gemini y se conservan al exportar o compartir la campaña.
 
-Validación: `npm test` usa respuestas simuladas para comprobar búsqueda, normalización, caché, fallos parciales y manejo de credenciales. No acredita permisos de producción ni conexión en vivo. Registrar fecha, entorno, fuente, cuenta identificada sin secretos y resultado de una prueba real antes de declarar una cuenta verificada.
+Los conectores consultan APIs oficiales desde el servidor, con plazos y estados independientes. Las investigaciones comparten caché de hasta quince minutos; los resultados con fuentes no disponibles usan una duración corta. Un fallo no bloquea las demás fuentes. Los límites de carga están en [RENDIMIENTO.md](RENDIMIENTO.md).
 
-## TikTok Discovery: términos públicos no personalizados
+El radar se consulta al investigar o generar, sin actualización autónoma con la aplicación cerrada ni histórico continuo de crecimiento. Una campaña guardada conserva las observaciones utilizadas. No se equiparan vistas con alcance, likes con conversiones ni publicaciones con actividad de seguidores.
 
-Configurar `TIKTOK_DISCOVERY_ACCESS_TOKEN` y `TIKTOK_DISCOVERY_BUSINESS_ID`. El segundo valor corresponde al **`open_id` del usuario que autorizó el flujo OAuth**, no al ID del anunciante ni al Business Center. Es una credencial distinta de `TIKTOK_ACCESS_TOKEN` de Display API.
-
-La ruta oficial `GET /open_api/v1.3/discovery/trending/search/` recibe `business_id` e `is_personalized=false`; el token va en el encabezado `Access-Token`. Requiere **`discovery.search.words`** y el acceso de cuenta que TikTok exija (Advanced Access o verificación aplicable). Una respuesta rechazada se muestra como no disponible; guardar un token no activa la fuente por sí solo. No hay OAuth nuevo dentro de esta aplicación: el administrador completa el flujo aprobado del proveedor y configura los valores en el backend.
-
-Devuelve hasta 20 términos actuales de `search_keywords`, sin videos, vistas ni volumen. Esa ruta no filtra por país o intervalo histórico. El radar señala coincidencias temáticas y ofrece explorar el término; no inventa métricas regionales. Creative Center sigue siendo una herramienta manual independiente. [Documentación oficial de TikTok Discovery](https://business-api.tiktok.com/portal/docs?id=1832798345014338).
-
-## Facebook: páginas externas aprobadas
-
-Configurar `FACEBOOK_DISCOVERY_PAGE_IDS` con hasta tres IDs de páginas de referencia separados por coma y `FACEBOOK_PUBLIC_ACCESS_TOKEN` con acceso público aprobado para este caso de uso. Requiere la función/producto y permisos de Meta que correspondan, por ejemplo Page Public Content Access; confirmar aprobación y alcance con la app. La versión continúa en `META_GRAPH_VERSION`.
-
-El conector consulta `/{page_id}/posts` de esas páginas, hasta diez publicaciones por página, y excluye el ID de la página propia. No reutiliza `FACEBOOK_PAGE_ACCESS_TOKEN` como sustituto. No es búsqueda global ni escucha social general. Sin acceso aprobado muestra el pendiente y el equipo puede guardar enlaces manuales en el radar, identificados como referencias por revisar. [Page Public Content Access](https://developers.facebook.com/docs/features-reference/page-public-content-access/).
-
-## Preferencias de Instagram y campañas compartidas
-
-`INSTAGRAM_DISCOVERY_HASHTAGS` y `INSTAGRAM_DISCOVERY_ACCOUNTS` admiten hasta dos valores separados por coma, sin URLs. Las opciones del radar pueden elegirlos para una consulta. Si no se definen, se propone un hashtag por tema. `INSTAGRAM_CUENTAS_REFERENCIA` se sigue aceptando como alternativa por compatibilidad. Los permisos y límites de Hashtag Search y Business Discovery descritos arriba siguen aplicando.
-
-Las campañas y enlaces del equipo se guardan mediante `api/campanas.js` con un código privado. Requisitos, conflictos de revisión y uso de edición/aprobación en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md). No se publican contenidos automáticamente.
-
-## Comprobacion local del descubrimiento publico: 18 de noviembre de 2026
-
-La rama de trabajo es `feat/descubrimiento-publico`. Se conservaron e integraron los cambios locales existentes. Las metricas propias tienen endpoint separado y no alimentan el radar ni el catalogo de referencias de campanas.
-
-- Instagram: el backend consulta Hashtag Search y top_media/recent_media; top_media se presenta como **Publicaciones destacadas por hashtag** con el permalink real. Business Discovery se comprueba por separado. El exito del Explorador de Meta y el estado Listo para prueba no acreditan la ejecucion desde este backend. En esta prueba local faltaron INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_USER_ID y META_GRAPH_VERSION. Tambien falta una cuenta competidora para probar Business Discovery; el error #10 anterior sigue sin revalidarse.
-- YouTube: se reutilizo la busqueda publica por tema, canal UC y ventana de 1 a 30 dias, enriquecida con fecha y vistas. El radar permite elegir orden y canal. La etiqueta de vistas limita la afirmacion a los resultados del periodo, sin afirmar un ranking de toda la plataforma. YOUTUBE_API_KEY no esta en el entorno local. Su presencia en Vercel Production fue informada previamente, pero no se verifico en esta sesion: no hay CLI de Vercel disponible ni un conector de administracion.
-- Facebook: permanece **Pendiente de acceso a paginas publicas** ante falta de acceso, rechazo o respuesta vacia. Solo pasa a Consultada con publicaciones externas y enlaces validos. Se excluye el ID propio y no se reutiliza su token. El #100 anterior no se revalido sin credenciales externas.
-- TikTok: pendiente y sin consultas automaticas desde el radar, incluso si hay credenciales de Discovery.
-- Consulta HTTP local de /api/tendencias: 200; Google Trends devolvio datos reales de Bolivia; GDELT no estuvo disponible. Ninguna consulta social devolvio contenido real por falta de configuracion local. Google Trends aporta busquedas generales, no contenido de competidores ni validacion del sector.
-- Calendario HTTP con un ejemplo ficticio y Gemini real, autorizado por el usuario: 503; no se genero una propuesta real. Las pruebas simuladas comprueban continuidad con redes pendientes, marca, publico, objetivo y referencias. No se declara validacion real de Gemini ni de contenido competitivo.
-
-Para completar la comprobacion social local, configurar las variables anteriores solo en .env.local del backend. Para Facebook se requieren FACEBOOK_PUBLIC_ACCESS_TOKEN, FACEBOOK_DISCOVERY_PAGE_IDS y META_GRAPH_VERSION, con acceso externo efectivo; para Business Discovery, INSTAGRAM_DISCOVERY_ACCOUNTS. No copiar secretos al frontend ni usar prefijo VITE_. No se modificaron credenciales ni ajustes de Vercel.
-
-Comandos desde la raiz de feedback:
-
-```powershell
-npm.cmd run comprobar:descubrimiento
-npm.cmd test
-npm.cmd run build
-npm.cmd run dev -- --host 127.0.0.1
-```
-
-Abrir http://127.0.0.1:5173/ (Vite anunciara otro puerto si este esta ocupado). El diagnostico muestra presencia de variables, estados y hasta cinco enlaces de resultados; no muestra valores de credenciales ni respuestas crudas. La generacion sigue usando el catalogo externo para resolver IDs de referencias a enlaces reales; sin referencia reciente una pieza se identifica como hipotesis editorial. Los archivos del almacenamiento local de desarrollo quedan excluidos del servidor de archivos de Vite.
-
-## Instagram por hashtag: flujo mínimo y calendario
-
-El conector reutiliza `ig_hashtag_search` con `q` sin `#` y usa el ID de esa respuesta para llamar a `top_media`. Solicita hasta tres publicaciones con `id,permalink,caption`; si Meta rechaza los campos con código 100, hace un único intento con `id,permalink`. No consulta `recent_media` en este flujo ni usa IDs o enlaces fijos. Business Discovery permanece separado. Las secciones anteriores que describen `recent_media` corresponden al comportamiento previo.
-
-En **Fuentes y tendencias**, el campo visible **Hashtag de Instagram** acepta `#educacion` o `educacion`. La acción protegida `preferencias` de `/api/tendencias` permite cargar hasta dos valores públicos de `INSTAGRAM_DISCOVERY_HASHTAGS` como lista inicial opcional; no devuelve credenciales. El token, el ID de cuenta y la versión Graph se usan solo en el backend.
-
-Los resultados se etiquetan **Publicaciones destacadas por hashtag en Instagram** y muestran la etiqueta consultada y el enlace para abrir cada publicación. Si falta caption, se conserva `texto: null` y no se inventan texto, formato, vistas ni otras métricas ausentes. La pertinencia queda sin confirmar; el hashtag identifica la consulta, no demuestra qué dice cada publicación.
-
-Cada resultado puede enviarse al calendario con **Usar como referencia del calendario**; **Crear mi calendario** también incluye las referencias disponibles, priorizando las de Instagram y con un máximo de cinco. Se conservan el enlace, hashtag y texto disponible sin sustituir una descripción de marca ya escrita. Las fuentes seleccionadas por el navegador se identifican como aportadas por el equipo, no como una respuesta autenticada del proveedor. Si una idea cita Instagram, el enlace aparece visible en su detalle, junto a la idea. El generador recibe la instrucción de no describir una publicación cuyo texto no fue recibido.
-
-Validación del 18 de noviembre de 2026:
-
-- Se encontró la implementación tanto en la copia actual como en `feat/descubrimiento-publico`; no había cambios locales ajenos al iniciar.
-- La consulta real `POST /api/tendencias` con `hashtags: ["#educacion"]` en el **backend de Vercel Production ya desplegado** devolvió HTTP 200 global, pero Instagram informó **token rechazado o vencido** en `ig_hashtag_search`, sin enlaces. YouTube y Google Trends sí devolvieron datos. El éxito global no valida Instagram.
-- `vercel env run -e production` pudo cargar configuración en un proceso temporal sin escribir archivos, pero no exportó el token marcado como Secret. Por tanto, la prueba local no dispuso de un token real válido. No se imprimieron secretos ni se actualizaron las variables de producción.
-- Chrome verificó el flujo completo en una instancia local aislada con **proveedores simulados**: consultar `#educacion`, mostrar tres enlaces sin texto, seleccionar una referencia, generar una idea y ver su enlace junto a ella. Esto prueba la integración, no los permisos reales de Meta.
-- Se corrigió la pérdida de referencias al planificar en el día local anterior al UTC. Las pruebas comparan días completos para respetar esa diferencia.
-
-Antes de la comprobación final, el administrador debe revisar o renovar `INSTAGRAM_ACCESS_TOKEN` en **Vercel Production**, usando un acceso que funcione para la misma cuenta de `INSTAGRAM_USER_ID`. No enviarlo por chat ni incorporarlo al frontend o a Git. Tras desplegar estos cambios, abrir el radar de producción, consultar `#educacion` y exigir enlaces reales devueltos por el backend. La verificación queda pendiente hasta ese resultado. Facebook sigue pendiente de acceso a páginas públicas.
-
-## Paridad local/producción y GDELT: revisión del 18 de noviembre de 2026
-
-Se añadió un modo de desarrollo conectado al backend de producción: `npm run dev:produccion`. La copia local también puede usar `API_REMOTA_DESARROLLO` en `.env.local`; el único valor necesario es el origen público HTTPS del proyecto. No se copian secretos y las APIs conservan su control de acceso. `npm run dev:local` permite volver al backend independiente para probar cambios del servidor. El modo conectado consume APIs y cuotas reales y utiliza las campañas compartidas de producción; el almacenamiento del navegador sigue siendo distinto por origen.
-
-Comprobación real con tema `ong`, país `US` y hashtag `voluntariado`: tanto una petición al proxy local como la misma petición al dominio de producción devolvieron tres enlaces de Instagram idénticos, diez videos de YouTube y diez búsquedas de Google Trends. Las tres fuentes estaban en estado Consultada. No se generaron campañas durante esa comprobación. Esto acredita lectura real en ese momento; no implica respuestas permanentes o idénticas si cambian los filtros, el contenido público, las cuotas o el instante de consulta.
-
-GDELT es una fuente complementaria de noticias, no una red social ni una fuente necesaria para generar el calendario. Sus consultas reales agotaron el tiempo de espera y una comprobación posterior respondió **HTTP 429**. Ese rechazo del proveedor no se puede convertir en noticias mediante una corrección local. Se separó su lector para distinguir tiempo agotado, falta de conexión, cuota, error HTTP y respuesta no válida; los mensajes ya no mezclan todas las causas. Solo una lista válida y vacía se identifica como Sin resultados. La ampliación de ciudad a país comparte un presupuesto total de doce segundos.
-
-Tras un 429 se respeta Retry-After (o una pausa inicial de sesenta segundos si falta), acotada entre uno y trescientos segundos. La pausa se aplica al proceso, también si se cambia de tema; no es una coordinación global entre todas las instancias del proveedor o de Vercel. No hay reintentos automáticos de cuota ni resultados ficticios. La nueva explicación y la pausa requieren desplegar el backend actualizado para verse al consultar producción o el proxy conectado a ella.
-
-Las fuentes principales disponibles son **Instagram por hashtag, YouTube y Google Trends**. GDELT aporta noticias cuando responde; Facebook sigue pendiente de acceso a páginas públicas, TikTok permanece pendiente, LinkedIn no dispone de descubrimiento público en esta app y X continúa excluido. No hace falta conectar esas otras redes para usar el calendario.
+No hay OAuth en el navegador, renovación automática de tokens, credenciales por usuario ni aislamiento entre organizaciones. Tener una variable configurada no acredita permisos ni conexión vigente. `npm test` valida respuestas simuladas; una conexión real se acredita por fuente, cuenta, fecha, entorno y resultado, como explica [CONFIGURAR_REDES.md](CONFIGURAR_REDES.md).

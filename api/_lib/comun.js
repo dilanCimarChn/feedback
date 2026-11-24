@@ -5,7 +5,6 @@ import { crearLimitador, ErrorServicio, huella } from './carga.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Modelos compatibles con fallback en caso de sobrecarga temporal
 const MODELOS = [
   process.env.GEMINI_MODEL,
   'gemini-3.6-flash',
@@ -14,7 +13,7 @@ const MODELOS = [
   'gemini-flash-latest'
 ].filter(Boolean);
 
-// Obtener API key con fallback de lectura directa del archivo .env en caliente
+// Si falta en el entorno, permite cargar la clave desde .env sin reiniciar.
 export function getApiKey() {
   if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
     return process.env.GEMINI_API_KEY.trim();
@@ -26,13 +25,11 @@ export function getApiKey() {
       process.env.GEMINI_API_KEY = match[2].trim();
       return process.env.GEMINI_API_KEY;
     }
-  } catch {
-    // Si no existe el archivo .env, se informa más abajo
-  }
+  } catch {}
   return null;
 }
 
-// Valida método, código de acceso y API key. Devuelve la API key o null si ya respondió con error.
+// Devuelve null cuando ya envió la respuesta de error.
 export function validarSolicitud(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Método no permitido. Utilice POST.' });
@@ -53,7 +50,6 @@ export function validarSolicitud(req, res) {
   return apiKey;
 }
 
-// Convierte un data URL (imagen o PDF) en una parte multimodal para Gemini
 export function parteArchivo(dataUrl) {
   const match = /^data:([\w/+.-]+);base64,(.+)$/s.exec(dataUrl || '');
   if (!match) return null;
@@ -102,8 +98,7 @@ async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs,pensamiento
   for (const modelo of [...new Set(modelos)]) {
     if (Date.now() >= limite) break;
     try {
-      // Solo modelos cuya compatibilidad está documentada. Los alias y
-      // modelos personalizados conservan su configuración original.
+      // Los alias y modelos personalizados conservan su configuración original.
       const nivel=pensamientoRapido?(/^gemini-3(?:\.[56])?-flash(?:-preview|-lite)?$/.test(modelo)?'minimal':/^gemini-3\.[78]-flash$/.test(modelo)?'low':null):null;
       const cuerpoModelo=nivel?JSON.stringify({...payload,generationConfig:{...payload.generationConfig,thinkingConfig:{thinkingLevel:nivel}}}):cuerpo;
       const response = await fetch(
@@ -126,8 +121,7 @@ async function invocarGemini(apiKey, parts, clave, tiempoRespuestaMs,pensamiento
         }
         if (response.status === 404) continue;
         if (response.status >= 500) {
-          // Un modelo saturado permite una alternativa de la lista configurada,
-          // dentro del mismo presupuesto. Una cuota 429 sigue deteniendo todo.
+          // Una sobrecarga admite una alternativa; la cuota 429 detiene las peticiones.
           if(++fallosTransitorios<2&&Date.now()<limite-1000)continue;
           throw new ErrorServicio('El proveedor de IA está ocupado. Intenta de nuevo en unos segundos.', 503, 10);
         }

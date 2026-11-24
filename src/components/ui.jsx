@@ -96,7 +96,6 @@ export function Icono({ nombre, tamano = 18, grosor = 2 }) {
   );
 }
 
-// Lista editable de palabras: se agregan con Enter o coma y se quitan con la X
 export function ChipsInput({ valores, onChange, placeholder, prefijo = '' }) {
   const [borrador, setBorrador] = useState('');
 
@@ -143,7 +142,6 @@ export function ChipsInput({ valores, onChange, placeholder, prefijo = '' }) {
   );
 }
 
-// Grupo de opciones tipo tarjeta (una sola seleccionada)
 export function OpcionesTarjeta({ opciones, valor, onChange, columnas = 3 }) {
   return (
     <div className="opciones-tarjeta" style={{ '--columnas': columnas }} role="radiogroup">
@@ -196,7 +194,6 @@ export function Interruptor({ activo, onChange, titulo, descripcion }) {
   );
 }
 
-// Zona para soltar o seleccionar archivos, con miniaturas
 export function ZonaArchivos({ miniaturas, onAgregar, onQuitar, max, multiple = true, titulo, ayuda, deshabilitado }) {
   const lleno = miniaturas.length >= max;
 

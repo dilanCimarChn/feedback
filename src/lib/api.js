@@ -3,7 +3,6 @@ const CLAVE_CODIGO = 'agente-feedback:codigo-acceso';
 let solicitarCodigo = null;
 let codigoPendiente = null;
 
-// La app registra aquí la función que muestra el modal de código de acceso
 export function registrarSolicitudCodigo(fn) {
   solicitarCodigo = fn;
 }

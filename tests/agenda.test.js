@@ -66,7 +66,7 @@ test('histórico reciente selecciona alcance medio dentro de la misma red y día
   const inicio = new Date(Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth() + 1, 1));
   const fin = new Date(Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth() + 1, 0));
   const filas = [];
-  // Se cubren todos los días semanales para comprobar la elección, cualquiera sea el slot.
+  // Cubre todos los días para que la fecha elegida no afecte el resultado.
   for (let i = 1; i <= 28; i++) {
     const fecha = new Date(Date.parse(ahora.toISOString().slice(0, 10)) - i * 86400000).toISOString().slice(0, 10);
     for (const [hora, alcance, pagado] of [['07:30', 150, false], ['11:15', 75, false], ['22:00', 9000, true]]) {
