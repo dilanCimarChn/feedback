@@ -36,8 +36,7 @@ function cuotas(total, diasConPublicaciones, redes) {
   return cantidades;
 }
 
-// Grados bipartitos: comprueba que las cuotas que quedan caben en las fechas
-// futuras, con una sola publicación de cada red por día (Gale-Ryser).
+// Gale-Ryser: las cuotas restantes deben caber sin repetir una red el mismo día.
 function cabenCuotas(restantes, limites) {
   const ordenadas = [...restantes].sort((a, b) => b - a);
   let acumulado = 0;
@@ -65,8 +64,7 @@ function distribuirRedes(fechas, cantidades, total, redes) {
       if (indices.length !== dia.cantidad || indices.some(i => restantes[i] === 0)) continue;
       const despues = restantes.map((n, i) => n - (indices.includes(i) ? 1 : 0));
       if (!cabenCuotas(despues, limites[d + 1])) continue;
-      // El déficit respecto a la cuota acumulada reparte también las redes de
-      // menor peso durante toda la campaña, en vez de relegarlas al final.
+      // El déficit acumulado distribuye las redes de menor peso durante toda la campaña.
       const puntaje = indices.reduce((suma, i) => {
         const publicadas = cantidades[i] - restantes[i];
         const deficit = avance * cantidades[i] / total - publicadas;

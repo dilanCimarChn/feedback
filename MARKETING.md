@@ -1,72 +1,74 @@
-# Campa?as TSCP basadas en el flujo de marketing
+# Estrategia y calendario de marketing
 
-La pantalla principal propone tres meses, con estrategia TSCP seleccionada, ingl?s y Estados Unidos como mercado de referencia para tendencias. El perfil de marca se reutiliza. La duraci?n personalizada y las preferencias son opcionales. En instalaciones con preferencias guardadas se conservan los valores anteriores; seleccionar TSCP en preferencias activa este flujo.
+La pantalla **Estrategia y calendario** prepara campañas orgánicas a partir del perfil de marca, el objetivo y las fuentes disponibles. Genera propuestas editables y exportables. La producción de las piezas, publicación y atención de consultas corresponden al equipo.
 
-La referencia es el PDF ?Flujo de trabajo para las campa?as de marketing y IT de TSCP? aportado por el equipo. Se incorporaron sus cuatro segmentos, cinco pilares, objetivo de adquisici?n de ONGs y nueve campos de cronograma. Cadencia fija: Instagram 3, LinkedIn 2 (dentro de 2?3), Facebook 2 y TikTok 2 por semana; los per?odos parciales conservan los d?as correspondientes. Son nueve salidas semanales con reutilizaci?n de producci?n. Mes 1: Awareness; mes 2: Consideration; mes 3+: Conversion, con revisi?n de resultados antes de afirmar qu? funciona.
+## Preparar una campaña
 
-Cada pieza incluye segmento, pilar, mensaje, prop?sito y CTA. El JSON y CSV conservan estos campos, adem?s de fecha, hora, formato, copy, guion, instrucciones visuales y UTM. Se proponen enlaces del sitio y marketplace; los enlaces de reuni?n e informaci?n quedan pendientes de confirmar. No se comprueban enlaces autom?ticamente. Los testimonios, precios, gratuidad, cifras y casos requieren validaci?n. Good360 y TechSoup son referencias del brief, no un benchmarking realizado por la aplicaci?n.
+1. Describe lo que quieres impulsar o reutiliza el perfil de marca guardado. En **Ajustar objetivo, público, plataformas y otras preferencias** puedes precisar objetivo, público, productos, presupuesto, tono y fechas importantes.
+2. Elige un período: un día, una semana, uno, tres o seis meses, o un año. También puedes personalizar duración y fecha inicial o elegir un mes natural. El máximo es 366 días; tres meses es la recomendación inicial.
+3. Revisa mercado, ciudad o región, idioma y zona IANA. Sin preferencias guardadas, el formulario inicia en Estados Unidos, `America/New_York`, español y estrategia general. Un plan utiliza un mercado y una zona; los públicos de regiones distintas requieren adaptación.
+4. Selecciona plataformas y, si lo necesitas, cantidad o frecuencia. El modo general propone cinco publicaciones semanales entre todas las redes y admite hasta 366 por campaña. Una publicación cuenta como una salida en una plataforma, aunque se reutilice la producción.
+5. Genera y revisa el calendario. Puedes editar fecha, hora, formato, copy, guion, CTA, dirección visual y KPI; exportar a CSV o JSON; o compartir el plan con el equipo.
 
-Se generan cinco borradores de email por bloque en d?as relativos 0, 3, 7, 13 y 20, con condiciones de seguimiento del documento; la interfaz muestra la secuencia del primer bloque como plantilla por contacto. No hay CRM, env?os ni seguimiento de respuestas. El JSON completo contiene las secuencias. La UI recuerda confirmar responsables y mecanismo de baja.
+**Fuentes y tendencias** permite investigar antes de planificar. **Usar como referencia del calendario** conserva el enlace seleccionado; **Crear mi calendario** lleva hasta cinco referencias disponibles, priorizando Instagram. Los enlaces aportados desde el navegador se identifican como referencias del equipo y deben revisarse.
 
-Audiencia internacional: se puede cambiar mercado de tendencias, idioma y zona IANA. Un plan usa un solo mercado de referencia y zona horaria; no mide simult?neamente todas las regiones. Para diferentes p?blicos se necesitan planes separados y adaptaci?n cultural. No se presupone que toda la audiencia est? en Bolivia ni en un estado de EE. UU.
+La marca aporta colores, tipografías, tono, reglas de emojis e instrucciones. El generador no modifica el perfil guardado ni recibe sus imágenes de referencia para planificar. Los campos sin información quedan pendientes de validar.
 
-Tres meses es la recomendaci?n operativa del equipo. Se mantiene el m?ximo de un a?o por bloques mensuales, provisional y con revisi?n semanal. Las fuentes actuales no predicen tendencias futuras ni horas pico de cuentas. No se han a?adido Insights de audiencia ni actualizaci?n aut?noma con la aplicaci?n cerrada.
+## Agenda y continuidad
 
-Validaci?n: 16 pruebas automatizadas, incluyendo cadencia, embudo entre bloques, validaci?n de segmentos y CTA, UTM y secuencia de email; compilaci?n de producci?n correcta. Generaci?n TSCP comprobada con respuestas simuladas, no con una campa?a real de Gemini ni evaluaci?n visual en navegador.
+En modo general, el servidor calcula fecha, hora, red y formato antes de pedir los textos. Reparte la cantidad total entre los bloques sin acumular redondeos y prioriza Facebook, Instagram, TikTok, X, LinkedIn y YouTube; cuando hay suficientes publicaciones incluye las seis. La frecuencia y distribución son decisiones editoriales iniciales, no resultados medidos.
 
----
+La interfaz genera bloques de hasta siete días, sin cruzar el límite del mes; campañas densas usan bloques más cortos. El contenido general se solicita en lotes de hasta tres piezas. Las respuestas que alteran la agenda, omiten piezas o citan referencias inexistentes se rechazan.
 
-# Estrategia y calendario para cualquier nicho
+Cada bloque terminado se conserva localmente. **Detener después de este bloque** espera a que termine la petición en curso. **Continuar bloques pendientes** reutiliza el contexto guardado y las piezas editadas; la continuación requiere mantener el contexto y la división de bloques de la campaña. Mantén la aplicación abierta: no hay generación ni actualización autónoma con la aplicación cerrada.
 
-La pantalla inicial **Estrategia y calendario** amplía el revisor de marca con planificación orgánica de campañas. **Fuentes y tendencias** permite explorar las mismas fuentes independientes antes de planificar. Un fallo de GDELT no bloquea las otras fuentes. Las señales elegidas se llevan como contexto al calendario. El encabezado corresponde a la pantalla seleccionada y la configuración de marca se solicita como paso previo solo en el revisor.
+Antes de generar otra campaña o abrir una distinta, guarda la actual en el equipo o expórtala. El plan nuevo sustituye al borrador al completar su primer bloque. Guardado, conflictos y alternativas se explican en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
 
-Admite cualquier nicho: sector de texto libre con sugerencias, producto o servicio, propuesta de valor y campaña mensual. Los objetivos incluyen ventas, consultas, reservas, lanzamientos, fidelización, comunidad y objetivos personalizados; voluntariado y donaciones son opciones para organizaciones que los necesiten. El generador adapta sus pilares, CTA y métricas a estos datos. Las campañas guardadas en la versión anterior conservan su descripción.
+El calendario permite filtrar por mes y red, muestra conteos por plataforma y formato y conserva siete columnas con desplazamiento horizontal en móvil. CSV y JSON incluyen los bloques completados, contenido, referencias, dirección visual y fundamento del horario. El JSON conserva además las herramientas sugeridas.
 
-## Modo automático (pantalla principal)
+## Estrategia TSCP
 
-El usuario elige una duración de días, semanas, meses o un año (máximo 366 días). Si ya configuró la marca, no necesita volver a describir su sector y audiencia; si falta la descripción, escribe una frase. Fecha inicial, país, zona horaria y objetivo se pueden cambiar en **Preferencias opcionales**. El país inicial es Bolivia y la zona inicial America/La_Paz; se muestran junto al botón para revisarlos.
+Selecciona **TSCP · flujo del equipo de marketing** en las preferencias. La referencia es el documento «Flujo de trabajo para las campañas de marketing y IT de TSCP». El objetivo es captar ONGs para el marketplace; los correos se dirigen a voluntarios de otras organizaciones que puedan presentar TSCP internamente.
 
-`/api/plan-automatico` investiga automáticamente Google Trends RSS por país, YouTube si tiene clave y GDELT con un tema derivado del perfil. Las consultas públicas se hacen en paralelo, con timeout de 12 segundos para RSS/noticias y caché en memoria de 15 minutos. La IA descarta señales ajenas al nicho. Cada fuente tiene estado explícito (consultada, sin resultados, sin configurar o no disponible), instante de consulta y referencias en el calendario. Google Trends refleja búsquedas; no mide uso de redes ni demuestra eficacia de un formato. Los conteos observados no son una garantía de rendimiento.
+El flujo incorpora cuatro segmentos: operadores de primera línea, ONGs pequeñas o grassroots, ONGs establecidas y redes o coaliciones. Sus pilares son Discover the Platform, Success Stories, Why Join, Behind the Project y Join Now. Los CTA admitidos son Learn more, Request info, Book intro meeting y Register now.
 
-El modo general propone unas tres publicaciones por semana como frecuencia inicial; TSCP usa nueve salidas por semana seg?n su brief, decide redes, fechas y horas, y genera copy, hashtags, palabras clave, guion, CTA, distribución y dirección visual. La paleta, tipografías, tono, reglas de emojis e instrucciones de la marca se incluyen en el contexto; no se modifica la configuración guardada de marca. Si un campo de identidad falta, la propuesta debe indicarse como pendiente de validar. No se publica ni se contacta a personas automáticamente.
+| Plataforma | Salidas por semana completa |
+| --- | ---: |
+| Instagram | 3 |
+| LinkedIn | 2 |
+| Facebook | 2 |
+| TikTok | 2 |
 
-Los horarios se etiquetan en el servidor: con al menos tres registros orgánicos de esa red en el mismo día semanal y franja horaria, se informa la muestra del histórico importado. Esto no acredita una hora óptima ni causalidad. Si no, se identifica como prueba inicial. Las métricas se recuperan del histórico importado previamente en modo manual, excluyendo anuncios y publicaciones posteriores al inicio del bloque.
+Los períodos parciales conservan los días correspondientes. Esta cadencia sustituye la cantidad y selección de redes del modo general. La agenda propone Awareness en el primer mes natural de la campaña, Consideration en el siguiente y Conversion desde el tercero. Los meses posteriores requieren revisar resultados antes de afirmar qué funciona.
 
-Hay un catálogo editorial pequeño de temporadas: Año Nuevo, Navidad y algunas efemérides de Naciones Unidas, con anticipación de hasta tres semanas. Se distingue de tendencias medidas; no pretende cubrir todos los feriados locales ni todas las fechas comerciales. Referencias: [Google Trends](https://support.google.com/trends/answer/3076011), [efemérides ONU](https://www.un.org/en/observances/list-days-weeks).
+Cada pieza incluye campaña, tema, mensaje, propósito, público, CTA, formato, plataforma y fecha, además de hora, copy, guion e instrucciones visuales. Los enlaces conocidos del sitio y marketplace reciben UTM; los destinos de información y reunión quedan pendientes de confirmación. La aplicación no comprueba automáticamente que funcionen.
 
-La campaña se divide por meses en bloques de hasta 31 días para no pedir a la IA un año entero en una sola llamada. Cada bloque terminado se guarda localmente; si falla o se detiene, se puede continuar. La detención ocurre después de completar la petición en curso. Generar un plan nuevo reemplaza el anterior al completarse su primer bloque. Una campaña anual puede necesitar 13 bloques si empieza a mitad de mes, con el correspondiente consumo de Gemini. Los planes futuros son provisionales: la IA no puede conocer tendencias de todo el próximo año y recomienda revisión semanal. No hay tarea automática que regenere planes cerrados.
+La secuencia de email se genera solo en el primer bloque como plantilla por contacto: cinco borradores en los días relativos 0, 3, 7, 13 y 20. Conserva las condiciones de seguimiento del brief y se incluye en el JSON. No hay CRM, envíos ni seguimiento de clics o respuestas. El equipo debe confirmar responsables, destinatarios y mecanismo de baja antes de utilizarla.
 
-El resultado se consulta por mes y red, se edita seleccionando una publicación y se exporta a CSV o JSON. El CSV incluye todos los bloques completados, con dirección visual y fundamento del horario. El modo manual anterior sigue disponible en **Ajustes manuales e importar estadísticas**.
+El flujo está incorporado parcialmente: Good360 y TechSoup son referencias pendientes de investigar, no un benchmarking realizado. El diagnóstico integral de canales y enlaces no está automatizado. La segmentación y el mensaje con tres apoyos se solicitan en el texto de estrategia, sin garantizar entregables separados. Testimonios, socios, cifras, casos, precios, gratuidad y elegibilidad necesitan validación humana.
 
-Verificación: `node --test tests/marketing.test.js tests/automatico.test.js` (12 pruebas). Incluye duraciones, años bisiestos, bloques continuos, lectura RSS, estacionalidad, investigación y generación simuladas, respeto del contexto de marca, base horaria calculada y errores parciales. La comprobación pública en vivo obtuvo tendencias RSS de Bolivia; GDELT no respondió y YouTube no estaba configurado. Una prueba adicional con Gemini real devolvió HTTP 200 y tres publicaciones para una campaña ficticia de una semana, con Google Trends consultado. Esto comprueba el recorrido de generación, no acredita resultados de marketing ni sustituye revisión editorial o prueba visual de la interfaz.
+## Fuentes y fundamento
 
-## Modo manual (opcional)
+La generación consulta fuentes en paralelo y declara sus estados por separado. Un fallo no impide continuar con una propuesta editorial inicial ni se sustituye por datos inventados. El alcance de las fuentes está en [REDES_SOCIALES.md](REDES_SOCIALES.md); configuración y permisos, en [CONFIGURAR_REDES.md](CONFIGURAR_REDES.md).
 
-1. Opcionalmente descarga la plantilla CSV, complétala en Excel o Sheets e importa estadísticas reales de tus publicaciones. Se admiten también arreglos JSON con los mismos campos. No se interpreta automáticamente el CSV nativo de cada plataforma: hay que adaptar sus columnas a la plantilla.
-2. Selecciona el rango del histórico que quieres analizar. El cuadro compara alcance medio, tasa ponderada de interacciones sobre alcance y conversiones por red y formato. Excluye publicaciones marcadas como pagadas. Usa muestras y períodos comparables, y la misma definición de conversión.
-3. Indica mes, sector, oferta, campaña, audiencia, objetivo, ciudad o país, redes, recursos, días y dos horarios de prueba. Las horas de tu histórico deben corresponder a la zona horaria elegida.
-4. Genera la estrategia con Gemini, usando la marca configurada. Se genera una publicación total por día seleccionado, repartiendo las redes. El servidor fija las fechas del mes y alterna las horas elegidas; no delega los cálculos de calendario a la IA.
-5. Consulta el calendario, filtra, selecciona una publicación y edita fecha, hora, copy, guion, CTA y hashtags. Puedes llevar el copy al revisor de marca, exportar CSV o descargar el plan completo en JSON.
+Cada referencia conserva enlace y fecha de consulta. Se vincula como evidencia reciente solo a piezas de los próximos 30 días; las fechas posteriores usan ideas provisionales, temas duraderos o temporadas. Una fuente citada no demuestra eficacia ni valida todo el copy. Sin referencia pertinente, la pieza se identifica como hipótesis editorial.
 
-La planificación se guarda en localStorage del navegador. Cada generación correcta reemplaza el plan anterior; exporta antes si necesitas conservar versiones. Un error de generación conserva el plan anterior. No se programan ni publican contenidos en redes.
+Los hashtags observados indican dónde apareció una etiqueta, sin acreditar popularidad, volumen o rendimiento. Las demás etiquetas son propuestas. Vistas, alcance, likes y conversiones son métricas distintas; una fecha de publicación no demuestra actividad de seguidores.
 
-## Fuentes y conexiones
+Los horarios utilizan el histórico orgánico importado de los últimos 90 días observables, excluyendo anuncios y registros futuros. Para identificar una franja se requieren al menos tres publicaciones de esa red, día semanal y franja; se informa la muestra sin afirmar una hora óptima ni causalidad. Sin muestra suficiente, el horario es de prueba en la zona del público.
 
-- **Histórico propio:** CSV/JSON aportado por el usuario; se muestra la cantidad de registros, no se declara verificado por la plataforma. Se conserva localmente y se envía a Gemini al generar el plan junto con el sector, oferta, campaña, audiencia, preferencias y perfil de marca textual. No se envían imágenes de referencia para planificar.
-- **Señales YouTube:** API oficial `videos.list` con `chart=mostPopular`, país y estadísticas públicas. Requiere `YOUTUBE_API_KEY` en el servidor y YouTube Data API v3 habilitada. Cache de 15 minutos. No se expone la clave al navegador. La consulta es manual o al generar un plan si se activa la casilla; no hay actualización automática de esta fuente. Guarda el instante de consulta, títulos, enlaces y métricas observadas.
-- **Facebook, Instagram, TikTok, X y LinkedIn:** adaptadores oficiales de lectura configurables en el servidor, además de YouTube. Consumen publicaciones de cuentas autorizadas o búsqueda pública reciente en X; no son un ranking global de tendencias. Configuración, permisos y límites en [REDES_SOCIALES.md](REDES_SOCIALES.md). No hay todavía conexión OAuth en la interfaz ni renovación automática de tokens. La importación sigue disponible para métricas de alcance y conversiones.
-- **Guía editorial:** roles propuestos para video, carrusel, imagen e historias; enlaces oficiales de Meta y YouTube en pantalla. No es un benchmark reciente ni un ranking global.
+El catálogo de temporadas incluye Año Nuevo, Navidad y algunas efemérides de Naciones Unidas, con anticipación de hasta tres semanas. No cubre todos los feriados locales o comerciales. Revisa cada semana temas, horarios y resultados, especialmente en planes largos.
 
-Los videos populares generales de YouTube pueden no ser pertinentes para la marca. El prompt ordena descartarlos si no aportan al nicho y no extrapolarlos a otras redes. Las vistas son acumuladas, no velocidad de crecimiento. No se calculan volúmenes de hashtags, ni se identifican automáticamente Reels o Shorts a partir de duración. Los hashtags extraídos son texto presente en descripciones; los hashtags del calendario son propuestas sin volumen medido.
+## Ajustes manuales e importación de estadísticas
 
-Sin histórico y sin YouTube configurado, la generación funciona como propuesta editorial inicial de IA, claramente identificada. No hay garantía de visibilidad, mejores horarios medidos, ni tendencias externas inventadas. El equipo debe verificar el copy y completar datos reales, enlaces o autorizaciones antes de publicar. No incluye compra u optimización de publicidad pagada.
+1. Descarga la plantilla CSV y adapta las columnas de tus estadísticas. También se admiten arreglos JSON con los mismos campos; no se interpretan automáticamente los CSV nativos de cada plataforma.
+2. Elige el período para comparar alcance medio, interacciones ponderadas sobre alcance y conversiones por red y formato. Se excluyen publicaciones pagadas. Usa períodos comparables y la misma definición de conversión.
+3. Completa mes, sector, oferta, público, objetivo, ubicación, redes, recursos, días y dos horarios de prueba. Las horas importadas deben corresponder a la zona elegida.
+4. Genera el plan mensual. Este modo crea una publicación total por cada día seleccionado y reparte las redes; el servidor fija fechas y alterna los horarios indicados.
+5. Edita, lleva el copy al revisor de marca o exporta a CSV o JSON. Guarda o exporta el plan antes de sustituirlo por otra generación.
 
-## Backend y validación
+El histórico se conserva en el navegador y se envía a Gemini al generar el plan junto con el contexto de campaña y el perfil textual de marca. Es información aportada por el usuario, sin verificación automática de la plataforma.
 
-- `/api/plan-marketing`: autenticación existente, Gemini del servidor, validación de redes y formatos, mes y fechas, JSON de respuesta completo. No devuelve planes con publicaciones faltantes o formatos incompatibles.
-- `/api/senales-sociales`: autenticación existente, consulta pública opcional y estado explícito cuando falta la clave.
-- Desarrollo local: ambas rutas están registradas en el middleware Vite; Vercel descubre sus archivos serverless.
-- `node --test tests/marketing.test.js`: fechas y años bisiestos, importación, comparación orgánica, seguridad CSV, acceso, calendario completo y conexión ausente. Las respuestas de Gemini se simulan en las pruebas; no prueban disponibilidad del proveedor ni calidad del contenido generado.
-- `npm run build`: compilación de producción.
+## Comprobación
 
-Referencias: [Meta: estrategia de contenido](https://www.facebookblueprint.com/student/path/196036-strategic-content-for-your-community), [YouTube Data API](https://developers.google.com/youtube/data/reference/rest/v3/videos/list).
+`npm test` cubre fechas, agenda, importación, segmentación TSCP, CTA, UTM, email, referencias y fallos parciales con servicios simulados. `npm run build` compila el cliente. No acreditan disponibilidad real de Gemini, permisos sociales ni resultados de marketing. Los límites de ejecución y carga están en [RENDIMIENTO.md](RENDIMIENTO.md).

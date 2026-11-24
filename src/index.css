@@ -1,7 +1,6 @@
 :root {
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Paleta Semi-Clara Profesional */
   --bg-page: #F8FAFC;
   --bg-surface: #FFFFFF;
   --bg-surface-subtle: #F1F5F9;
@@ -16,13 +15,11 @@
   --text-muted: #64748B;
   --text-light: #94A3B8;
 
-  /* Marca y Acciones */
   --brand-navy: #1A2B3C;
   --brand-navy-hover: #0F172A;
   --brand-navy-soft: #E8EEF5;
   --brand-accent: #E63946;
 
-  /* Estados */
   --status-success-bg: #ECFDF5;
   --status-success-border: #A7F3D0;
   --status-success-text: #065F46;
@@ -68,7 +65,6 @@ button {
   font-family: inherit;
 }
 
-/* Layout Principal */
 .app-container {
   max-width: 1160px;
   margin: 0 auto;
@@ -81,7 +77,6 @@ button {
   }
 }
 
-/* Header */
 .top-header {
   border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 2rem;
@@ -136,7 +131,6 @@ button {
   line-height: 1.6;
 }
 
-/* Tarjeta de marca en el header */
 .tarjeta-marca {
   display: inline-flex;
   align-items: center;
@@ -202,7 +196,6 @@ button {
   border-radius: 9999px;
 }
 
-/* Bienvenida */
 .bienvenida {
   display: flex;
   align-items: center;
@@ -252,7 +245,6 @@ button {
   background: var(--bg-surface-subtle);
 }
 
-/* Grid del Contenido */
 .main-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -266,7 +258,6 @@ button {
   }
 }
 
-/* Tarjetas */
 .panel-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -309,7 +300,6 @@ button {
   color: var(--text-secondary);
 }
 
-/* Formularios */
 .field-group {
   margin-bottom: 1.5rem;
 }
@@ -373,7 +363,6 @@ button {
   min-height: 72px;
 }
 
-/* Zona de carga */
 .dropzone {
   border: 2px dashed var(--border-medium);
   border-radius: var(--radius-md);
@@ -492,7 +481,6 @@ button {
   white-space: nowrap;
 }
 
-/* Botones */
 .btn-primary-action {
   width: 100%;
   padding: 0.85rem 1.5rem;
@@ -618,7 +606,6 @@ button {
   height: 30px;
 }
 
-/* Spinner */
 .loader-spinner {
   width: 16px;
   height: 16px;
@@ -644,7 +631,6 @@ button {
   }
 }
 
-/* Controles: tarjetas de opción, segmentado, interruptores, chips */
 .opciones-tarjeta {
   display: grid;
   grid-template-columns: repeat(var(--columnas, 3), minmax(0, 1fr));
@@ -872,7 +858,6 @@ button {
   color: var(--brand-navy);
 }
 
-/* Modal */
 .modal-fondo {
   position: fixed;
   inset: 0;
@@ -1150,7 +1135,6 @@ button {
   text-transform: uppercase;
 }
 
-/* Avisos */
 .aviso {
   display: flex;
   align-items: flex-start;
@@ -1187,7 +1171,6 @@ button {
   display: block;
 }
 
-/* Código de acceso */
 .icono-acceso {
   width: 48px;
   height: 48px;
@@ -1211,7 +1194,6 @@ button {
   margin-bottom: 1rem;
 }
 
-/* Estados del resultado */
 .state-empty {
   text-align: center;
   padding: 3.5rem 1.5rem;
@@ -1455,7 +1437,6 @@ button {
   color: #B91C1C;
 }
 
-/* Radar de tendencias */
 [hidden] { display: none !important; }
 .pestanas { display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px; padding-bottom: 12px; }
 .pestanas button, .temas-marca button { border: 1px solid var(--border-medium); background: white; border-radius: 8px; padding: 10px 16px; color: var(--text-secondary); cursor: pointer; font: inherit; }
@@ -1498,7 +1479,6 @@ button {
 .tendencias td, .tendencias th { padding: 8px; border-bottom: 1px solid var(--border-subtle); }
 @media (max-width: 800px) { .tendencias-filtros, .tendencias-grid { grid-template-columns: 1fr; } }
 
-/* Estrategia y calendario editorial */
 .pestanas { flex-wrap: wrap; }
 .marketing { display: grid; grid-template-columns:minmax(0,1fr); min-width:0; gap: 24px; }
 .marketing > * { min-width:0; }
@@ -1609,7 +1589,6 @@ button {
 .campana-estado-aprobado{background:#dcfce7;color:#166534}.campana-estado-pendiente_revision{background:#fef3c7;color:#92400e}.campana-estado-descartado{background:#fee2e2;color:#991b1b}
 .campana-alternativa{padding:1rem;margin:1rem 0;background:#f2f6ff;border:1px solid #c6d7fb;border-radius:12px}
 
-/* Enlaces públicos de privacidad y eliminación, también visibles desde la app. */
 .pie-informativo {
   display: flex;
   flex-wrap: wrap;

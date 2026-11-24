@@ -1,147 +1,68 @@
-# Agente de Feedback - Auditoría de Contenido con IA
+# Agente de Feedback
 
-Incluye **Estrategia y calendario para cualquier nicho**: elige una duración de un día a un año y el agente consulta fuentes disponibles y propone redes, fechas, horarios, temas, guiones, copy, hashtags y dirección visual con Gemini. Reutiliza el perfil de marca y deja los ajustes manuales como opción. Uso, conexiones y límites en [MARKETING.md](MARKETING.md).
+Herramienta para revisar contenido de marca y preparar campañas orgánicas con Google Gemini. Incluye fuentes públicas, calendarios editables y un espacio compartido para el equipo. Las propuestas requieren revisión editorial; la aplicación no publica en redes ni envía correos.
 
-Sistema inteligente de control de calidad y auditoría de marca para publicaciones en redes sociales (Feed, Reels y Carruseles), impulsado por **React 19 + Vite** y la API multimodal de **Google Gemini**.
+## Funciones
 
----
+- **Marca:** propone colores, tipografías, tono e instrucciones a partir de ejemplos, una descripción o un manual PDF. El perfil queda editable y se puede exportar o importar como JSON.
+- **Revisión:** analiza copy e imágenes frente al perfil de marca y devuelve un puntaje y observaciones por severidad. Admite un post, un carrusel de hasta ocho láminas o una portada de Reel.
+- **Estrategia y calendario:** prepara fechas, formatos, textos, guiones, CTA, hashtags y dirección visual. Admite campañas generales y una estrategia específica para TSCP.
+- **Fuentes y tendencias:** conserva enlaces, fechas y límites de las fuentes disponibles. La cobertura depende de permisos y disponibilidad de cada proveedor.
+- **Campañas compartidas:** permite editar, enviar a revisión, aprobar, descartar y generar alternativas, con control de revisiones y respaldo local.
 
-## Características
+| Guía | Contenido |
+| --- | --- |
+| [MARKETING.md](MARKETING.md) | Calendario, estrategia TSCP e importación de estadísticas |
+| [REDES_SOCIALES.md](REDES_SOCIALES.md) | Alcance del radar y lectura de cuentas propias |
+| [CONFIGURAR_REDES.md](CONFIGURAR_REDES.md) | Variables, permisos y comprobación de conexiones |
+| [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md) | Almacenamiento, acceso y colaboración |
+| [RENDIMIENTO.md](RENDIMIENTO.md) | Límites, tiempos de espera y pruebas de carga |
 
-- **Configuración de marca sin conocimientos técnicos** (botón *Configurar* → modal de 3 pasos):
-  1. **Enseñar mi marca**: se suben publicaciones de ejemplo, el manual en PDF y/o una descripción libre, y la IA extrae colores, tipografías, tono, palabras clave, hashtags y estilo visual.
-  2. **Mi marca**: todo lo aprendido queda editable (selector de colores, etiquetas, imágenes de referencia).
-  3. **Cómo revisar**: nivel de exigencia (flexible / equilibrado / estricto), aprobar o solo sugerir, nivel de detalle, qué aspectos revisar, redes e indicaciones libres.
-- **Revisión multimodal**: copy + imagen (o varias láminas en carruseles), comparada contra las imágenes de referencia de la marca.
-- **Resultado claro**: puntaje 0-100, lo que está bien, observaciones por severidad (Importante / Mejorable / Detalle) y botón para copiar el informe.
-- **Formatos**: Post (1:1 / 4:5), Carrusel (hasta 8 láminas) y Reel (portada 9:16 con zonas seguras de la app).
-- La configuración se guarda en el navegador y se puede **exportar/importar** como archivo JSON.
-- **Código de acceso opcional** (`APP_ACCESS_CODE`) para que nadie más consuma la API key.
+## Desarrollo local
 
----
+Requiere Node.js y npm. Instala las dependencias:
 
-## Tecnologías
+```sh
+npm install
+```
 
-- **Frontend**: React 19, Vite, CSS moderno. Las imágenes se comprimen en el navegador antes de enviarse.
-- **Backend / Serverless**: Vercel Serverless Functions (`/api/evaluar`, `/api/analizar-marca`).
-- **IA**: Google Gemini Flash multimodal (vía Google Generative Language API).
+Crea `.env` o `.env.local` a partir de [.env.example](.env.example). Para generar y revisar contenido configura `GEMINI_API_KEY`; `APP_ACCESS_CODE` permite exigir un código de acceso. Las fuentes sociales son opcionales. Para compartir campañas, consulta [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
 
-### Limitaciones conocidas
+| Comando | Entorno de las APIs |
+| --- | --- |
+| `npm run dev:local` | Backend local con las variables de este equipo |
+| `npm run dev:produccion` | Backend publicado en `https://feedback-sigma-one.vercel.app` |
+| `npm run dev` | Backend local, salvo que se defina `API_REMOTA_DESARROLLO` |
 
-- Los colores y medidas los estima la IA visualmente; no son mediciones exactas de píxeles.
-- En Reels se evalúa una portada o captura, no el video completo.
-- El manual de marca en PDF se limita a 2 MB (límite de 4.5 MB por solicitud en Vercel).
-- La configuración vive en el navegador de cada usuario; para compartirla se usa Exportar/Importar.
+El modo conectado a producción reenvía `/api` desde Vite sin copiar secretos. Consume cuotas reales y lee o modifica las campañas compartidas de ese servidor. Localhost y el dominio público no comparten el perfil ni el borrador del navegador: cada origen tiene su propio `localStorage`.
 
----
+Para configurar otro backend de desarrollo, define `API_REMOTA_DESARROLLO` con un origen HTTPS sin credenciales, rutas ni parámetros. El proxy funciona solo durante desarrollo. Los cambios locales del backend requieren desplegarse antes de que el modo conectado pueda utilizarlos.
 
-## Configuración Local
+Las credenciales permanecen en el servidor: no usar el prefijo `VITE_` ni incorporar archivos `.env` a Git. Reinicia Vite después de cambiar la configuración.
 
-1. Clona el repositorio:
-   ```bash
-   git clone https://github.com/dilanCimarChn/feedback.git
-   cd feedback
-   ```
+## Arquitectura y despliegue
 
-2. Instala las dependencias:
-   ```bash
-   npm install
-   ```
+El cliente utiliza React 19 y Vite. Las rutas de `api/` funcionan como Vercel Serverless Functions; Vite incorpora un middleware para ejecutarlas durante desarrollo. Gemini se consulta desde el servidor. Las imágenes se comprimen en el navegador antes de enviarse.
 
-3. Crea un archivo `.env` en la raíz (ver `.env.example`):
-   ```env
-   GEMINI_API_KEY=tu_api_key_de_gemini
-   APP_ACCESS_CODE=codigo_opcional
-   ```
+Para desplegar en Vercel, configura las variables del entorno correspondiente y compila con `npm run build`. Vuelve a desplegar después de cambiar variables o código del backend. La presencia de configuración en el repositorio no acredita los permisos ni la disponibilidad actual del despliegue.
 
-4. Inicia el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
+## Privacidad y almacenamiento
 
----
+El perfil de marca, las miniaturas, preferencias, métricas importadas y borradores se guardan en el navegador. Los datos necesarios para generar o revisar contenido se envían a Gemini. Campañas, referencias y hallazgos compartidos utilizan almacenamiento privado; en desarrollo independiente puede utilizarse un archivo local.
 
-## Despliegue en Vercel
+Las páginas públicas `/privacidad` y `/eliminacion-de-datos` se compilan desde [privacidad.html](privacidad.html) y [eliminacion-de-datos.html](eliminacion-de-datos.html), con rutas definidas en [vercel.json](vercel.json). No necesitan JavaScript ni código de acceso. La segunda contiene instrucciones para solicitar la eliminación, no un callback automático de borrado. No hay borrado automático de campañas ni plazos de retención configurados. Mantén esas páginas al día cuando cambie el tratamiento de datos.
 
-Primer despliegue, registrado el 16 de noviembre de 2026:
+## Límites y comprobación
 
-- Aplicación: [feedback-sigma-one.vercel.app](https://feedback-sigma-one.vercel.app).
-- Proyecto: [dilancimarchn-5758/feedback](https://vercel.com/dilancimarchn-5758/feedback), plan Hobby.
-- El primer despliegue usó la rama `dev`, commit `60071ac`, mediante Vercel CLI. La ampliación del radar y las campañas se publicó el 17 de noviembre; ver [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
-- `GEMINI_API_KEY` está configurada como secreto de producción. Las conexiones sociales siguen siendo opcionales. La ampliación del radar y del calendario se documenta en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md).
-- La publicación actual funciona sin vinculación Git. Para desplegar automáticamente futuros pushes, falta conectar GitHub a la cuenta de Vercel y vincular este repositorio.
-- `.env` y los archivos locales están excluidos mediante `.vercelignore`; los metadatos de `.vercel/` no se versionan.
+La revisión visual estima colores y medidas; no mide píxeles de forma exacta. En Reels analiza una portada o captura, no el video completo. El manual PDF admite hasta 2 MiB y el middleware local limita las solicitudes a 4 MiB; el hosting puede imponer otros límites.
 
-1. Importa el repositorio en [Vercel](https://vercel.com).
-2. En la sección **Environment Variables**, añade:
-   - `GEMINI_API_KEY`: tu clave de API de Gemini.
-   - `APP_ACCESS_CODE` (opcional): código que se pedirá para usar la herramienta.
-3. Haz clic en **Deploy**.
+Los calendarios y horarios son propuestas. Las fuentes no garantizan visibilidad, crecimiento ni conversiones. X está excluida de las consultas; TikTok permanece pendiente en el radar. Consulta [REDES_SOCIALES.md](REDES_SOCIALES.md) antes de atribuir cobertura a una plataforma.
 
-## Radar de tendencias
-
-Para obtener y configurar los accesos oficiales, consultar [CONFIGURAR_REDES.md](CONFIGURAR_REDES.md). Incluye portales de registro, variables del servidor, costos, comprobación de conexiones y pendientes para continuar en otra sesión.
-
-Prioriza las seis redes **Facebook, Instagram, TikTok, X (Twitter), LinkedIn y YouTube**, con conectores de lectura oficiales configurables en el servidor. Sin credenciales se muestra `Sin configurar`; no se inventan datos. Configuración y alcance de cada conexión en [REDES_SOCIALES.md](REDES_SOCIALES.md).
-
-La pestaña **Fuentes y tendencias** consulta `/api/tendencias`, que reúne Google Trends RSS, YouTube (si tiene clave) y noticias GDELT de los últimos 7 días. Cada fuente tiene estado propio: un fallo de GDELT no impide ver las tendencias disponibles ni continuar al calendario. El tema orienta las noticias y la búsqueda de videos recientes de YouTube. La consulta permite 1–30 días y muestra el alcance real de Instagram, TikTok Discovery y Facebook externo según sus permisos; no es un ranking completo de ninguna red.
-
-Muestra las señales obtenidas, el momento de consulta y enlaces a las fuentes. No mide alcance, engagement ni mejores horarios de Instagram o TikTok. Las señales se pueden llevar al agente para evaluar su pertinencia y generar una campaña; no se presentan como garantía de rendimiento.
-
-La consulta es manual en esta pestaña y automática al generar un calendario. Hay caché en memoria de 15 minutos y no hay archivo persistente ni actualización con la aplicación cerrada. Este radar no incluye historial de cobertura. Si ninguna fuente responde, lo informa y permite continuar con una propuesta editorial inicial, sin inventar datos.
-
-Documentación del proveedor: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
-
-## Campañas compartidas
-
-El calendario permite editar, enviar a revisión, aprobar, descartar y generar una alternativa de cada publicación. Las campañas y referencias manuales se guardan en Vercel Blob privado con un código del equipo y control de revisiones; el navegador conserva un respaldo. Preferencias avanzadas opcionales, estados y configuración en [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md). La aprobación no publica en redes.
-
-## Páginas públicas para Meta
-
-La app «Agente de Feedback» incorpora dos documentos HTML independientes:
-
-- Política de privacidad: `/privacidad`, desde `privacidad.html`.
-- Instrucciones de eliminación: `/eliminacion-de-datos`, desde `eliminacion-de-datos.html`.
-
-Vite compila ambas páginas junto con la aplicación. Las dos reescrituras específicas de `vercel.json` conservan esas rutas al abrirlas directamente o recargar. No se añade una ruta general que convierta cualquier URL en la pantalla principal. Las páginas incluyen todo el texto sin JavaScript, no montan la app ni llaman sus APIs y no exigen código de acceso. La aplicación enlaza a ambas en su pie.
-
-El contenido describe los datos comprobados en el código: marca, miniaturas, preferencias, calendarios e histórico opcional en almacenamiento del navegador; campañas, referencias y hallazgos compartidos en Blob privado o archivo de desarrollo; solicitudes de análisis a Gemini y consultas de lectura a proveedores públicos. La eliminación diferencia el borrado del navegador, la revocación en Facebook y la solicitud manual al proyecto en **cimardilan@gmail.com**. No hay borrado automático de campañas ni plazos fijos de retención configurados. Si cambia el tratamiento de datos, hay que actualizar estos textos.
-
-Para revisar la compilación antes del despliegue:
-
-```bash
+```sh
 npm test
+npm run test:load
 npm run build
 npm run preview -- --host 127.0.0.1
 ```
 
-Abrir `http://127.0.0.1:4173/privacidad` y `http://127.0.0.1:4173/eliminacion-de-datos` en una ventana privada y recargar. Cada ruta debe mostrar su título y contenido propio; los enlaces cruzados y el contacto deben funcionar. Las APIs conservan la comprobación de código que ya tenían cuando está configurado; las páginas informativas no la omiten para otras funciones.
-
-Después de desplegar esta versión, los enlaces para la configuración de Meta serán:
-
-- https://feedback-sigma-one.vercel.app/privacidad
-- https://feedback-sigma-one.vercel.app/eliminacion-de-datos
-
-La preparación de estas páginas no concede acceso a contenido público de Facebook: el radar sigue pendiente hasta obtener publicaciones reales de una página que no administremos. No se incorpora una devolución de llamada automática de borrado; la segunda URL contiene instrucciones públicas para presentar una solicitud.
-
-## Local con las mismas APIs que la web
-
-Para trabajar sobre la interfaz local y usar el backend ya publicado, ejecuta:
-
-```bash
-npm run dev:produccion
-```
-
-El navegador abre la interfaz local; Vite reenvía `/api` al proyecto `https://feedback-sigma-one.vercel.app`. Instagram, YouTube y las demás fuentes se consultan desde ese servidor con sus variables de Production. No se exportan ni copian los tokens al equipo. Se mantiene el código de acceso del servidor. Las consultas usan cuota real y las campañas compartidas que se creen o editen corresponden al mismo equipo de producción.
-
-La pantalla identifica este modo como **Modo local conectado a producción**. El perfil de marca, el borrador y el código guardado del navegador siguen perteneciendo a cada origen: localhost y el dominio público no comparten su almacenamiento del navegador. Para igualar el perfil de marca se puede exportar e importar su configuración.
-
-También se puede activar para `npm run dev` agregando solo esta URL pública en `.env.local` y reiniciando Vite:
-
-```env
-API_REMOTA_DESARROLLO=https://feedback-sigma-one.vercel.app
-```
-
-Para ejecutar y probar el backend local, utiliza `npm run dev:local`. Ese modo necesita sus propias variables de backend y no hereda los secretos de Production. El proxy se aplica solo al servidor de desarrollo; no crea un proxy de producción ni modifica Vercel. Su destino debe ser un origen HTTPS sin credenciales, rutas ni parámetros.
-
-Los cambios de interfaz siguen necesitando un despliegue para aparecer en la web pública. En el modo conectado, las correcciones nuevas del backend local también necesitan desplegarse antes de que el proxy pueda usarlas.
+Las pruebas usan proveedores simulados: verifican el código, sin acreditar permisos ni calidad editorial en producción. `preview` sirve la compilación del cliente y permite comprobar las páginas públicas, enlaces y vista móvil; no ejecuta las funciones de `api/`. Para comprobar conexiones reales utiliza un backend configurado.

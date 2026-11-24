@@ -5,10 +5,8 @@ import { resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { statSync } from 'node:fs';
 
-// Cargar variables de entorno desde .env en desarrollo
 cargarEntornoLocal();
 
-// Funciones serverless disponibles en /api (mismo nombre que el archivo)
 const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'metricas-propias', 'plan-marketing', 'plan-automatico', 'senales-sociales', 'campanas', 'regenerar-publicacion'];
 
 export default defineConfig(({command,isPreview})=>{
@@ -72,7 +70,7 @@ export default defineConfig(({command,isPreview})=>{
               return;
             }
 
-            // Polyfill de métodos de respuesta para compatibilidad con Vercel Functions
+            // Adapta la respuesta de Node al contrato de Vercel Functions.
             res.status = code => {
               res.statusCode = code;
               return res;

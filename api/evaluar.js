@@ -5,7 +5,6 @@ import { FORMATOS, CATEGORIAS } from './_lib/formatos.js';
 const MAX_PIEZAS = 10;
 const MAX_REFERENCIAS = 4;
 
-// Puntaje mínimo y severidades que impiden aprobar según el nivel de exigencia
 const EXIGENCIAS = {
   flexible: {
     puntaje: 55,
@@ -127,7 +126,7 @@ function normalizarResultado(bruto, categorias, comportamiento) {
   const puntajeBruto = Number(bruto?.puntaje);
   const puntaje = Number.isFinite(puntajeBruto) ? Math.round(Math.min(100, Math.max(0, puntajeBruto))) : null;
 
-  // La aprobación se decide aquí, no en el modelo, para que respete el nivel de exigencia
+  // El servidor aplica los umbrales de aprobación, independientemente del modelo.
   const exigencia = EXIGENCIAS[comportamiento.exigencia] || EXIGENCIAS.equilibrado;
   const bloqueado = errores.some(e => exigencia.bloquean.includes(e.severidad));
   const aprobado =

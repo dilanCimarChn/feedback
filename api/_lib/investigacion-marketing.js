@@ -44,8 +44,7 @@ function consultaTema(tema) {
   return terminos.length > 1 ? `(${terminos.join(' OR ')})` : terminos[0] || 'marketing';
 }
 
-// GDELT busca cobertura traducida al inglés. El lugar se busca como mención en
-// las noticias; no equivale al país del medio ni al lugar de una audiencia.
+// GDELT busca menciones del lugar en cobertura traducida al inglés, no la ubicación de la audiencia.
 export function consultaGeografica(pais, tema, region = '') {
   const asunto = consultaTema(tema);
   const paisTexto = PAISES_BUSQUEDA[pais] || pais;
@@ -158,7 +157,6 @@ export function temporadas(inicio, fin) {
   const lista=[];
   for(let y=Number(inicio.slice(0,4)); y<=Number(fin.slice(0,4));y++) for(const [dia,nombre,tipo,url] of catalogo) {
     const fecha=`${y}-${dia}`;
-    // Incluir la anticipación de campaña hasta tres semanas antes del evento.
     if(fecha>=inicio && fecha<=new Date(Date.parse(fin)+21*86400000).toISOString().slice(0,10)) lista.push({fecha,nombre,tipo,url});
   }
   return lista;

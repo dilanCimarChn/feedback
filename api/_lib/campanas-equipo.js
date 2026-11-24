@@ -25,9 +25,8 @@ export function crearAlmacenBlob({leerBlob=get,leerMetadata=head,escribirBlob=pu
     const r=await leerBlob(RUTA,{...opciones(),useCache:false,abortSignal:AbortSignal.timeout(12000)});
     if(!r)return {datos:{campanas:{},referencias:[]},etag:null};
     const datos=await new Response(r.stream).json();let etag=r.blob.etag;
-    // La entrega comprimida puede devolver W/"hash"; If-Match exige el ETag
-    // fuerte de metadata. Comprobar ambas versiones antes de usarlo evita
-    // asociar contenido antiguo con el ETag de una escritura concurrente.
+    // If-Match exige un ETag fuerte; contrasta metadata para no asociar
+    // contenido antiguo con una escritura concurrente tras una respuesta comprimida.
     if(etag?.startsWith('W/')){
       const metadata=await leerMetadata(RUTA,{...opciones(),abortSignal:AbortSignal.timeout(12000)});
       if(etag.slice(2)!==metadata.etag)throw new ErrorCampana('El documento cambió durante la lectura. Intenta guardar nuevamente.',409);
