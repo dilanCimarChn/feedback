@@ -1,18 +1,21 @@
 # Agente de Feedback
 
-Herramienta para revisar contenido de marca y preparar campañas orgánicas con Google Gemini. Incluye fuentes públicas, calendarios editables y un espacio compartido para el equipo. Las propuestas requieren revisión editorial; la aplicación no publica en redes ni envía correos.
+Agente para configurar campañas TSCP, comparar referentes y preparar una guía de trabajo con Google Gemini. La pantalla principal sigue los pasos 0 y 1 acordados con marketing y ofrece un cronograma orientativo sin copys finales. El workflow del paso 2 queda pendiente de sus aclaraciones. La aplicación no publica en redes ni envía correos.
 
 ## Funciones
 
 - **Marca:** propone colores, tipografías, tono e instrucciones a partir de ejemplos, una descripción o un manual PDF. El perfil queda editable y se puede exportar o importar como JSON.
 - **Revisión:** analiza copy e imágenes frente al perfil de marca y devuelve un puntaje y observaciones por severidad. Admite un post, un carrusel de hasta ocho láminas o una portada de Reel.
-- **Estrategia y calendario:** prepara fechas, formatos, textos, guiones, CTA, hashtags y dirección visual. Admite campañas generales y una estrategia específica para TSCP.
+- **Campaña y diagnóstico:** objetivo para voluntarios o empresas, inicio, duración y canales. Reutiliza la marca y permite ajustar misión, vocabulario y lenguaje por plataforma dentro de opciones desplegables.
+- **Referentes:** localiza los perfiles iniciales mediante enlaces contrastados en sitios oficiales y propone alternativas identificadas. Separa perfiles y métricas. Las APIs disponibles aportan referencias temáticas para las sugerencias, conservando origen y límites ante fallos parciales.
+- **Guía orientativa:** comparación de contenido y CTA, segmentos, mensaje estratégico y variantes, fechas y estructuras sugeridas. Incluye ejemplos de copy, hashtags e ideas por canal para revisar con marketing. Se descarga en JSON o Markdown.
+- **Conexiones y APIs:** consulta las variables presentes y faltantes del backend utilizado, con enlaces a la documentación. No devuelve credenciales ni confunde configuración con acceso comprobado.
 - **Fuentes y tendencias:** conserva enlaces, fechas y límites de las fuentes disponibles. La cobertura depende de permisos y disponibilidad de cada proveedor.
-- **Campañas compartidas:** permite editar, enviar a revisión, aprobar, descartar y generar alternativas, con control de revisiones y respaldo local.
+- **Compatibilidad con campañas anteriores:** conserva las APIs de almacenamiento, revisión y generación de alternativas, con control de revisiones y respaldo local.
 
 | Guía | Contenido |
 | --- | --- |
-| [MARKETING.md](MARKETING.md) | Calendario, estrategia TSCP e importación de estadísticas |
+| [MARKETING.md](MARKETING.md) | Pasos 0 y 1, cronograma orientativo y pendientes de marketing |
 | [REDES_SOCIALES.md](REDES_SOCIALES.md) | Alcance del radar y lectura de cuentas propias |
 | [CONFIGURAR_REDES.md](CONFIGURAR_REDES.md) | Variables, permisos y comprobación de conexiones |
 | [CALENDARIO_EQUIPO.md](CALENDARIO_EQUIPO.md) | Almacenamiento, acceso y colaboración |
@@ -48,7 +51,7 @@ Para desplegar en Vercel, configura las variables del entorno correspondiente y 
 
 ## Privacidad y almacenamiento
 
-El perfil de marca, las miniaturas, preferencias, métricas importadas y borradores se guardan en el navegador. Los datos necesarios para generar o revisar contenido se envían a Gemini. Campañas, referencias y hallazgos compartidos utilizan almacenamiento privado; en desarrollo independiente puede utilizarse un archivo local.
+El perfil de marca, las miniaturas, preferencias, métricas importadas y borradores se guardan en el navegador. La configuración, referentes y diagnóstico TSCP se conservan localmente y se pueden exportar para compartir. Los datos necesarios para analizar la marca, preparar el diagnóstico o revisar una pieza se envían a Gemini. Las campañas anteriores, referencias y hallazgos compartidos mantienen su almacenamiento privado; en desarrollo independiente puede utilizarse un archivo local.
 
 Las páginas públicas `/privacidad` y `/eliminacion-de-datos` se compilan desde [privacidad.html](privacidad.html) y [eliminacion-de-datos.html](eliminacion-de-datos.html), con rutas definidas en [vercel.json](vercel.json). No necesitan JavaScript ni código de acceso. La segunda contiene instrucciones para solicitar la eliminación, no un callback automático de borrado. No hay borrado automático de campañas ni plazos de retención configurados. Mantén esas páginas al día cuando cambie el tratamiento de datos.
 
