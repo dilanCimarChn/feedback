@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import ResultadoFeedback from './components/ResultadoFeedback';
 import CodigoAccesoModal from './components/CodigoAccesoModal';
-import Marketing from './components/MarketingAutomatico';
 import { Icono } from './components/ui';
 import {
   borrarConfiguracion,
@@ -15,10 +14,11 @@ const EXIGENCIA = { flexible: 'Flexible', equilibrado: 'Equilibrado', estricto: 
 const FormularioPublicacion = lazy(() => import('./components/FormularioPublicacion'));
 const ConfiguracionModal = lazy(() => import('./components/ConfiguracionModal'));
 const Tendencias = lazy(() => import('./components/Tendencias'));
+const AgenteTscp = lazy(() => import('./components/AgenteTscp'));
 
 export default function App() {
-  const [pantalla, setPantalla] = useState('marketing');
-  const [visitadas,setVisitadas]=useState(['marketing']);
+  const [pantalla, setPantalla] = useState('tscp');
+  const [visitadas,setVisitadas]=useState(['tscp']);
   useEffect(()=>{setVisitadas(v=>v.includes(pantalla)?v:[...v,pantalla]);},[pantalla]);
   const [borrador, setBorrador] = useState(null);
   const [contextoMarketing, setContextoMarketing] = useState(null);
@@ -76,7 +76,7 @@ export default function App() {
         <div className="top-header-fila">
           <div className="brand-pill">
             <span className="brand-pill-dot"></span>
-            <span>Revisor de marca</span>
+            <span>Agente TSCP</span>
           </div>
           <button type="button" className="tarjeta-marca" onClick={() => setModalAbierto(true)}>
             {configurado ? (
@@ -102,8 +102,8 @@ export default function App() {
             </span>
           </button>
         </div>
-        <h1>{pantalla === 'marketing' ? 'Contenido listo para tu equipo' : pantalla === 'tendencias' ? 'Explora señales para tu próxima campaña' : 'Revisa tus publicaciones antes de publicarlas'}</h1>
-        <p>{pantalla === 'marketing' ? 'Elige la duración y el agente propone tu estrategia y calendario.' : pantalla === 'tendencias' ? 'Consulta las fuentes disponibles y lleva las ideas a tu calendario.' : 'Sube tu pieza y su texto: te diremos si respeta los colores, tipografías, espacios y tono de tu marca.'}</p>
+        <h1>{pantalla === 'tscp' ? 'Una campaña clara empieza con un buen diagnóstico.' : pantalla === 'tendencias' ? 'Explora referencias para tu diagnóstico' : 'Revisa tus publicaciones antes de publicarlas'}</h1>
+        <p>{pantalla === 'tscp' ? 'Define el objetivo, reutiliza tu marca y prepara una guía para trabajar con marketing.' : pantalla === 'tendencias' ? 'Consulta las fuentes disponibles y revisa su relación con la campaña.' : 'Sube tu pieza y su texto para revisar su coherencia con la marca.'}</p>
       </header>
 
       {!configurado && pantalla === 'revision' && (
@@ -128,16 +128,18 @@ export default function App() {
         ? 'Modo local conectado a producción: las consultas y campañas usan el mismo servidor que la web.'
         : 'Modo local independiente: las conexiones usan las variables configuradas en este equipo.'}</p>}
       <nav className="pestanas" aria-label="Pantallas">
-        <button type="button" aria-current={pantalla === 'marketing' ? 'page' : undefined} onClick={() => setPantalla('marketing')}>Estrategia y calendario</button>
+        <button type="button" aria-current={pantalla === 'tscp' ? 'page' : undefined} onClick={() => setPantalla('tscp')}>Campaña y diagnóstico</button>
         <button type="button" aria-current={pantalla === 'revision' ? 'page' : undefined} onClick={() => setPantalla('revision')}>Revisar publicación</button>
         <button type="button" aria-current={pantalla === 'tendencias' ? 'page' : undefined} onClick={() => setPantalla('tendencias')}>Fuentes y tendencias</button>
       </nav>
-      <div hidden={pantalla !== 'marketing'}>
-        <Marketing perfil={perfil} comportamiento={comportamiento} contexto={contextoMarketing} onUsar={texto => { setBorrador({ texto, id: Date.now() }); setPantalla('revision'); setResultado(null); setError(null); }} />
+      <div hidden={pantalla !== 'tscp'}>
+        <Suspense fallback={<p role="status">Cargando agente TSCP…</p>}>
+          <AgenteTscp perfil={perfil} comportamiento={comportamiento} contexto={contextoMarketing} onConfigurar={() => setModalAbierto(true)} onActualizarMarca={nuevoPerfil => handleGuardar({ perfil: nuevoPerfil, comportamiento })} />
+        </Suspense>
       </div>
       <div hidden={pantalla !== 'tendencias'}>
         {visitadas.includes('tendencias')&&<Suspense fallback={<p role="status">Cargando fuentes…</p>}>
-        <Tendencias perfil={perfil} onPlanificar={entrada => { const contexto=typeof entrada==='string'?{texto:entrada}:entrada; if (contexto?.texto?.trim()||contexto?.referencias?.length) setContextoMarketing({...contexto,id:Date.now()}); setPantalla('marketing'); }} onUsar={texto => { setBorrador({ texto, id: Date.now() }); setPantalla('revision'); setResultado(null); setError(null); }} />
+        <Tendencias perfil={perfil} onPlanificar={entrada => { const contexto=typeof entrada==='string'?{texto:entrada}:entrada; if (contexto?.texto?.trim()||contexto?.referencias?.length) setContextoMarketing({...contexto,id:Date.now()}); setPantalla('tscp'); }} onUsar={texto => { setBorrador({ texto, id: Date.now() }); setPantalla('revision'); setResultado(null); setError(null); }} />
         </Suspense>}
       </div>
       <main className="main-grid" hidden={pantalla !== 'revision'}>
