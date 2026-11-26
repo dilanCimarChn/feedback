@@ -10,12 +10,15 @@ Reglas:
 - Si solo hay imágenes, deduce los datos observando patrones que se repiten entre publicaciones. Para tipografías, indica el nombre más probable o una descripción del estilo (ej: "Sans serif geométrica tipo Montserrat, en negrita").
 - Lo que el cliente escriba en su descripción tiene prioridad sobre lo que deduzcas.
 - Si no hay información suficiente para un campo, déjalo vacío ("" o []). No inventes.
+- Extrae misión y vocabulario aprobado solo cuando el material los identifique explícitamente. Las palabras deducidas de ejemplos van en palabras_clave, no se consideran vocabulario aprobado.
 - Escribe en español claro, pensado para un equipo de marketing no técnico.
 
 RESPONDE EXCLUSIVAMENTE CON ESTE JSON:
 {
   "nombre": "nombre de la marca",
   "descripcion": "a qué se dedica la marca, en 1-2 oraciones",
+  "mision": "misión expresamente indicada en el material, o vacío",
+  "vocabulario_aprobado": ["solo términos expresamente aprobados en el material"],
   "colores": [{ "hex": "#RRGGBB", "nombre": "nombre descriptivo y su uso (ej: Azul marino - principal)" }],
   "tipografias": { "titulos": "", "cuerpo": "", "notas": "reglas de uso: pesos, mayúsculas, tamaños" },
   "tono": "cómo habla la marca: formal/cercano, tuteo/usted, estilo",
@@ -43,6 +46,8 @@ function normalizarPerfil(bruto) {
     perfil: {
       nombre: texto(bruto?.nombre, 120),
       descripcion: texto(bruto?.descripcion),
+      mision: texto(bruto?.mision, 3000),
+      vocabulario_aprobado: listaTextos(bruto?.vocabulario_aprobado, 40),
       colores,
       tipografias: {
         titulos: texto(bruto?.tipografias?.titulos, 120),

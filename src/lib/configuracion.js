@@ -3,6 +3,10 @@ const CLAVE = 'agente-feedback:configuracion:v1';
 export const PERFIL_VACIO = {
   nombre: '',
   descripcion: '',
+  mision: '',
+  vocabulario_aprobado: [],
+  lenguajes: {},
+  manual_marca: null,
   colores: [],
   tipografias: { titulos: '', cuerpo: '', notas: '' },
   tono: '',
