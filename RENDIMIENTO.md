@@ -32,7 +32,7 @@ La interfaz solicita bloques de hasta siete días, sin cruzar meses; los acorta 
 
 Los ajustes manuales, el revisor, las tendencias y la configuración se cargan al utilizarse. El calendario agrupa por fecha y el guardado de ediciones se difiere 400 ms, con un intento adicional al ocultar o cerrar la página. Ese respaldo no sustituye un guardado compartido confirmado.
 
-El middleware de desarrollo reutiliza los módulos de API y recarga el handler si cambia su fecha de modificación. Los cambios en dependencias de `api/_lib` pueden requerir reiniciar Vite.
+El middleware de desarrollo carga las funciones con el servidor SSR de Vite, también con `--configLoader runner`. Vite conserva su caché e invalida los módulos cuando cambian. Las rutas `/api/` desconocidas devuelven un `404` JSON en lugar del HTML de la aplicación.
 
 ## Referencias y horarios
 
