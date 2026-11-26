@@ -2,12 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import {cargarEntornoLocal,origenApiDesarrollo} from './api/_lib/entorno.js';
 import { resolve } from 'path';
-import { pathToFileURL } from 'url';
-import { statSync } from 'node:fs';
 
 cargarEntornoLocal();
 
-const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'metricas-propias', 'plan-marketing', 'plan-automatico', 'senales-sociales', 'campanas', 'regenerar-publicacion'];
+const RUTAS_API = ['evaluar', 'analizar-marca', 'tendencias', 'metricas-propias', 'plan-marketing', 'plan-automatico', 'senales-sociales', 'campanas', 'regenerar-publicacion', 'diagnostico-tscp', 'estado-apis'];
 
 export default defineConfig(({command,isPreview})=>{
   const apiRemota=command==='serve'&&!isPreview?origenApiDesarrollo(process.env.API_REMOTA_DESARROLLO):'';
@@ -41,8 +39,14 @@ export default defineConfig(({command,isPreview})=>{
         if(apiRemota)return; // En este modo las API se resuelven exclusivamente en Vercel.
         server.middlewares.use(async (req, res, next) => {
           const nombre = req.url.split('?')[0].replace(/^\/api\//, '');
-          if (!req.url.startsWith('/api/') || !RUTAS_API.includes(nombre)) {
+          if (!req.url.startsWith('/api/')) {
             next();
+            return;
+          }
+          if (!RUTAS_API.includes(nombre)) {
+            res.statusCode = 404;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'La ruta de API no existe en este servidor de desarrollo.' }));
             return;
           }
 
@@ -83,7 +87,7 @@ export default defineConfig(({command,isPreview})=>{
 
             try {
               const archivo = resolve('api', `${nombre}.js`);
-              const { default: handler } = await import(`${pathToFileURL(archivo).href}?t=${statSync(archivo).mtimeMs}`);
+              const { default: handler } = await server.ssrLoadModule(archivo);
               await handler(req, res);
             } catch (err) {
               console.error(`Error ejecutando api/${nombre} en dev middleware:`, err);

@@ -135,7 +135,8 @@ export default function ConfiguracionModal({ configuracion, configurado, onCerra
         descripcion
       });
 
-      setPerfil(prev => fusionarPerfil(prev, resultado.perfil, muestras.map(m => m.miniatura)));
+      setPerfil(prev => ({ ...fusionarPerfil(prev, resultado.perfil, muestras.map(m => m.miniatura)),
+        ...(manual ? { manual_marca: { nombre: manual.nombre, analizado: true, fecha: new Date().toISOString() } } : {}) }));
       if (resultado.instrucciones) {
         setComportamiento(prev => (prev.instrucciones ? prev : { ...prev, instrucciones: resultado.instrucciones }));
       }

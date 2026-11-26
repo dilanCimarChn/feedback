@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { agendaTscp, TSCP, SECUENCIA_EMAIL, enlacesTscp } from '../src/lib/tscp.js';
+import { agendaTscp, FRECUENCIA_TSCP, TSCP, SECUENCIA_EMAIL, enlacesTscp } from '../src/lib/tscp.js';
 import handler from '../api/plan-automatico.js';
 
 test('TSCP mantiene cadencia por red y embudo entre bloques',()=>{
@@ -10,6 +10,24 @@ test('TSCP mantiene cadencia por red y embudo entre bloques',()=>{
   assert.equal(agendaTscp('2027-01-01','2027-01-03','2026-11-01')[0].proposito,'Conversion');
   assert.match(enlacesTscp('Register now','LinkedIn','pieza-1'),/utm_content=pieza-1/);
   assert.match(enlacesTscp('Book intro meeting','LinkedIn','pieza-1'),/Pendiente/);
+});
+
+test('la frecuencia del flujo se conserva sin publicar a diario, incluso al empezar a mitad de semana', () => {
+  assert.deepEqual([FRECUENCIA_TSCP.LinkedIn.minima, FRECUENCIA_TSCP.LinkedIn.maxima], [2, 3]);
+  for (let desplazamiento = 0; desplazamiento < 7; desplazamiento++) {
+    const inicio = new Date(Date.UTC(2026, 10, 23 + desplazamiento)).toISOString().slice(0, 10);
+    const fin = new Date(Date.UTC(2026, 10, 29 + desplazamiento)).toISOString().slice(0, 10);
+    const agenda = agendaTscp(inicio, fin);
+    assert.equal(agenda.length, 9);
+    assert.equal(new Set(agenda.map(p => p.fecha)).size, 3);
+    assert.equal(new Set(agenda.map(p => `${p.fecha}:${p.red}`)).size, 9);
+    for (const [red, cantidad] of Object.entries({ Instagram: 3, LinkedIn: 2, Facebook: 2, TikTok: 2 })) assert.equal(agenda.filter(p => p.red === red).length, cantidad);
+    assert.ok(agenda.every(p => p.fecha >= inicio && p.fecha <= fin && [1, 3, 5].includes(new Date(p.fecha).getUTCDay())));
+  }
+  assert.deepEqual(agendaTscp('2026-11-24', '2026-11-24'), []);
+  assert.equal(agendaTscp('2026-11-25', '2026-11-25').filter(p => p.red === 'Instagram').length, 1);
+  const completo = agendaTscp('2026-11-23', '2026-12-06');
+  assert.deepEqual([...agendaTscp('2026-11-23', '2026-11-26'), ...agendaTscp('2026-11-27', '2026-12-06', '2026-11-23')], completo);
 });
 
 test('API TSCP valida agenda, segmentación, CTA y secuencia condicional de email',async()=>{

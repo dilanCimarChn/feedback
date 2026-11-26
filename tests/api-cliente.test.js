@@ -36,3 +36,21 @@ test('un timeout del cliente termina la espera con un mensaje recuperable', asyn
     await assert.rejects(llamarApi('/api/prueba',{}),/tardó demasiado/);
   } finally {globalThis.fetch=original;}
 });
+
+test('un 404 sin JSON identifica un backend sin la nueva función y no lo reintenta', async () => {
+  const original = globalThis.fetch;
+  let peticiones = 0;
+  try {
+    globalThis.fetch = async () => { peticiones++; return { ok: false, status: 404, json: async () => { throw new SyntaxError('NOT_FOUND'); } }; };
+    await assert.rejects(llamarApi('/api/diagnostico-tscp', {}), error => error.status === 404 && /servidor conectado/.test(error.message) && /backend/.test(error.message) && !error.message.includes('NOT_FOUND'));
+    assert.equal(peticiones, 1);
+  } finally { globalThis.fetch = original; }
+});
+
+test('un 404 de una campaña inexistente conserva el mensaje del backend', async () => {
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => ({ ok: false, status: 404, json: async () => ({ error: 'La campaña no existe en el equipo.' }) });
+    await assert.rejects(llamarApi('/api/campanas', {}), error => error.status === 404 && error.message === 'La campaña no existe en el equipo.');
+  } finally { globalThis.fetch = original; }
+});

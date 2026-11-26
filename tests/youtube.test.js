@@ -31,6 +31,26 @@ test('YouTube sin clave no consulta, informa modo y no inventa datos', async () 
   });
 });
 
+test('las referencias editoriales admiten videos anteriores sin alterar el filtro reciente del radar', async () => {
+  const consultas = [];
+  const video = item('OLDvideo_12', { snippet: { title: 'Nonprofit volunteer recruitment', description: '', publishedAt: '2020-01-01T00:00:00Z' } });
+  await conFetch('referencias-editoriales-simuladas', async url => {
+    const u = new URL(url); consultas.push(u);
+    if (u.pathname.endsWith('/search')) return { ok: true, json: async () => ({ items: [{ id: { videoId: video.id }, snippet: video.snippet }, { id: { videoId: 'FUTvideo_12' }, snippet: { publishedAt: '2099-01-01T00:00:00Z' } }] }) };
+    assert.equal(u.searchParams.get('id'), video.id);
+    return { ok: true, json: async () => ({ items: [video] }) };
+  }, async () => {
+    const historico = await obtenerSenales('US', 'nonprofit volunteer recruitment', { sinFiltroFecha: true });
+    assert.equal(consultas[0].searchParams.has('publishedAfter'), false);
+    assert.equal(historico.videos.length, 1);
+    assert.equal(historico.videos[0].publicado, '2020-01-01T00:00:00Z');
+    assert.match(historico.alcance, /sin límite de antigüedad/);
+    const reciente = await obtenerSenales('US', 'nonprofit volunteer recruitment');
+    assert.equal(consultas[2].searchParams.has('publishedAfter'), true);
+    assert.equal(reciente.videos.length, 0);
+  });
+});
+
 test('búsqueda temática reciente enriquece IDs únicos y nunca expone la clave en URL ni resultado', async () => {
   const peticiones=[];
   const ids=['abcDEF123_-','ZYXwv987_-0'];

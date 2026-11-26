@@ -15,6 +15,8 @@ Las credenciales son exclusivas del servidor: nunca usar `VITE_`, incluir tokens
 
 Las cuotas, facturación y aprobaciones dependen del proveedor y del proyecto. El código no compra créditos ni amplía cuotas automáticamente. X está excluida de consultas. Google Trends y GDELT no necesitan tokens sociales en esta implementación; siguen sujetos a condiciones y disponibilidad externas.
 
+El diagnóstico TSCP reutiliza estos accesos al preparar la guía: busca apoyo temático en YouTube y Trends, y consulta Instagram, páginas externas de Facebook y términos de TikTok Discovery cuando están configurados y autorizados. No hace falta volver a programar la conexión al renovar tokens; hay que actualizar variables, volver a desplegar y preparar un nuevo diagnóstico. Los enlaces a los perfiles iniciales proceden de sitios oficiales y las métricas se comprueban aparte. LinkedIn y TikTok propios no conceden acceso a publicaciones de competidores.
+
 ## YouTube
 
 1. Crea o elige un proyecto en [Google Cloud Console](https://console.cloud.google.com/) y habilita **YouTube Data API v3**.

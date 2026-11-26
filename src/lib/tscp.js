@@ -8,13 +8,22 @@ export const TSCP = {
   pendiente: 'Validar testimonios, resultados, socios, precios y elegibilidad antes de publicar. El documento menciona gratuidad para empezar: no afirmarla sin confirmación. No inventar enlaces de reuniones ni permisos. Confirmar responsable de publicación y aprobación en la entrega.',
 };
 
+// Sección 4.3: cantidades semanales. El documento no fija días de publicación.
+export const FRECUENCIA_TSCP = {
+  Instagram: { minima: 3, maxima: 3, propuesta: 3, diasPropuestos: [1, 3, 5] },
+  LinkedIn: { minima: 2, maxima: 3, propuesta: 2, diasPropuestos: [1, 5] },
+  Facebook: { minima: 2, maxima: 2, propuesta: 2, diasPropuestos: [1, 3] },
+  TikTok: { minima: 2, maxima: 2, propuesta: 2, diasPropuestos: [3, 5] },
+};
+
 export function agendaTscp(inicio, fin, origen = inicio) {
-  const cadencia = {1:['Instagram','LinkedIn'],2:['Facebook','TikTok'],3:['Instagram'],4:['LinkedIn'],5:['Instagram','Facebook'],6:['TikTok']};
   const filas=[];
   for(let t=Date.parse(inicio);t<=Date.parse(fin);t+=86400000){
     const fecha=new Date(t).toISOString().slice(0,10);
     const mes=(new Date(t).getUTCFullYear()-Number(origen.slice(0,4)))*12+new Date(t).getUTCMonth()-Number(origen.slice(5,7))+2;
-    for(const red of cadencia[new Date(t).getUTCDay()]||[]) filas.push({fecha,red,proposito:mes<=1?'Awareness':mes===2?'Consideration':'Conversion',campana:'NGO Acquisition – Social'});
+    for(const [red, regla] of Object.entries(FRECUENCIA_TSCP)) {
+      if(regla.diasPropuestos.includes(new Date(t).getUTCDay())) filas.push({fecha,red,proposito:mes<=1?'Awareness':mes===2?'Consideration':'Conversion',campana:'NGO Acquisition – Social'});
+    }
   }
   return filas;
 }

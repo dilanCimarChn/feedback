@@ -58,7 +58,12 @@ export async function llamarApi(ruta, cuerpo, reintento = false) {
 
   if (!response.ok) {
     const espera = Number(data?.reintentarEn || response.headers?.get('retry-after'));
-    const error = new Error(data?.error || 'Ocurrió un problema al procesar la solicitud. Inténtalo de nuevo.');
+    let mensaje = data?.error;
+    if (!mensaje && response.status === 404) {
+      mensaje = 'Esta función todavía no está disponible en el servidor conectado. Actualiza o despliega el backend y vuelve a intentarlo.';
+      if (import.meta.env?.DEV) mensaje += ' Para probar los cambios locales utiliza npm run dev:local; el modo conectado a producción necesita la nueva versión publicada.';
+    }
+    const error = new Error(mensaje || 'Ocurrió un problema al procesar la solicitud. Inténtalo de nuevo.');
     error.status = response.status;
     if (Number.isFinite(espera) && espera > 0) {
       error.reintentarEn = Math.ceil(espera);
